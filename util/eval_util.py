@@ -152,9 +152,9 @@ def absdiff_metrics(batch,batch_start_idx,theta_1,theta_2,geometric_model_1,geom
     current_batch_size=batch['source_im_size'].size(0)
     indices = range(batch_start_idx,batch_start_idx+current_batch_size)
 
-    stats[geometric_model_1]['rotate_diff'][indices] = abs((affine_simple_values[:, 0] - theta_1[:, 0]).cpu().detach().numpy())
-    stats[geometric_model_1]['scale_diff'][indices] = abs((affine_simple_values[:, 1] - theta_1[:, 1]).cpu().detach().numpy())
-    stats[geometric_model_1]['shift_diff'][indices] = abs((affine_simple_values[:, 2] - theta_1[:, 2]).cpu().detach().numpy())
+    stats[geometric_model_1]['rotate_diff'][indices] = np.abs((affine_simple_values[:, 0] - theta_1[:, 0]).cpu().detach().numpy())[..., None]
+    stats[geometric_model_1]['scale_diff'][indices] = np.abs((affine_simple_values[:, 1] - theta_1[:, 1]).cpu().detach().numpy())[..., None]
+    stats[geometric_model_1]['shift_diff'][indices] = np.abs((affine_simple_values[:, 2] - theta_1[:, 2]).cpu().detach().numpy())[..., None]
         
     return stats
 
