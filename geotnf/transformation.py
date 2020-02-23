@@ -531,6 +531,23 @@ def homography_mat_from_4_pts(theta):
     
     return H
 
+def affine_mat_from_simple(theta):
+    b=theta.size(0)
+    if not theta.size()==(b,3):
+        theta = theta.view(b,3)
+        theta = theta.contiguous()
+    
+    # All elements should have shape of (batch_size) for correct torch.stack
+    cos_alpha = torch.cos(theta[:, 0]) * theta[:, 1]
+    sin_alpha = torch.sin(theta[:, 0]) * theta[:, 1]
+    zero = Variable(torch.zeros(b))
+    if theta.is_cuda:
+        zero = zero.cuda()
+        
+    A = torch.stack((cos_alpha, -sin_alpha, zero, sin_alpha, cos_alpha, theta[:, 2]), 1)
+
+    return A
+
 class TpsGridGen(Module):
     def __init__(self, out_h=240, out_w=240, use_regular_grid=True, grid_size=3, reg_factor=0, use_cuda=True):
         super(TpsGridGen, self).__init__()

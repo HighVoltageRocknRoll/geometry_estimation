@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from geotnf.point_tnf import PointTnf
+from geotnf.transformation import affine_mat_from_simple
 
 class TransformedGridLoss(nn.Module):
     def __init__(self, geometric_model='affine', use_cuda=True, grid_size=20):
@@ -19,7 +20,7 @@ class TransformedGridLoss(nn.Module):
         self.P = Variable(torch.FloatTensor(P),requires_grad=False)
         self.pointTnf = PointTnf(use_cuda=use_cuda)
         if use_cuda:
-            self.P = self.P.cuda();
+            self.P = self.P.cuda()
 
     def forward(self, theta, theta_GT):
         # expand grid according to batch size
@@ -28,6 +29,10 @@ class TransformedGridLoss(nn.Module):
         # compute transformed grid points using estimated and GT tnfs
         if self.geometric_model=='affine':
             P_prime = self.pointTnf.affPointTnf(theta,P)
+            P_prime_GT = self.pointTnf.affPointTnf(theta_GT,P)
+        elif self.geometric_model == 'affine_simple':
+            theta_aff = affine_mat_from_simple(theta)
+            P_prime = self.pointTnf.affPointTnf(theta_aff,P)
             P_prime_GT = self.pointTnf.affPointTnf(theta_GT,P)
         elif self.geometric_model=='hom':
             P_prime = self.pointTnf.homPointTnf(theta,P)

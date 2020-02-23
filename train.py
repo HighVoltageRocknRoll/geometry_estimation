@@ -60,6 +60,8 @@ def main():
     print('Creating CNN model...')
     if args.geometric_model=='affine':
         cnn_output_dim = 6
+    elif args.geometric_model == 'affine_simple':
+        cnn_output_dim = 3
     elif args.geometric_model=='hom' and args.four_point_hom:
         cnn_output_dim = 8
     elif args.geometric_model=='hom' and not args.four_point_hom:
@@ -70,6 +72,10 @@ def main():
     model = CNNGeometric(use_cuda=use_cuda,
                          output_dim=cnn_output_dim,
                          **arg_groups['model'])
+
+    if args.geometric_model == 'affine_simple':
+        init_theta = torch.tensor([0, 1, 0], device = device)
+        model.FeatureRegression.linear.bias.data += init_theta
 
     if args.geometric_model=='hom' and not args.four_point_hom:
         init_theta = torch.tensor([1,0,0,0,1,0,0,0,1], device = device)
@@ -103,7 +109,11 @@ def main():
 			       random_sample=args.random_sample)
 
     # Set Tnf pair generation func
-    pair_generation_tnf = SynthPairTnf(geometric_model=args.geometric_model,
+    if args.geometric_model == 'affine_simple':
+        pair_generation_tnf = SynthPairTnf(geometric_model='affine',
+				       use_cuda=use_cuda)
+    else:
+        pair_generation_tnf = SynthPairTnf(geometric_model=args.geometric_model,
 				       use_cuda=use_cuda)
 
     # Initialize DataLoaders
@@ -190,3 +200,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+# python train.py --feature-extraction-cnn resnet101 --geometric-model affine_simple --trained-model-fn first --trained-model-dir C:/Users/22k_koz/Desktop/cnngeometric_pytorch/trained_models --training-dataset 3d --train-fe False --dataset-csv-path C:/Users/22k_koz/Desktop/cnngeometric_pytorch/training_data/3d-random --dataset-image-path C:/Users/22k_koz/Desktop/3d_pictures_gt --num-epochs 1
