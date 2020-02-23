@@ -103,6 +103,13 @@ def compose_aff_matrices(theta_1,theta_2):
     theta = torch.bmm(theta_1,theta_2)[:,:2,:].contiguous().view(batch_size,6)
     return theta
 
+def compose_simple(theta_1,theta_2):
+    theta = torch.zeros_like(theta_1)
+    theta[:, 0] = theta_1[:, 0] + theta_2[:, 0]
+    theta[:, 1] = theta_1[:, 1] * theta_2[:, 1]
+    theta[:, 2] = theta_1[:, 2] + theta_2[:, 2]
+    return theta
+
 def compose_tps(theta_1,theta_2):
     batch_size=theta_1.size()[0]
     use_cuda=torch.cuda.is_available()

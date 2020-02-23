@@ -10,6 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 from data.pf_dataset import PFDataset, PFPascalDataset
 from data.caltech_dataset import CaltechDataset
 from data.tss_dataset import TSSDataset
+from data.dataset_3d import Dataset3D
 from data.download_datasets import *
 from geotnf.point_tnf import *
 from geotnf.transformation import GeometricTnf
@@ -27,10 +28,10 @@ on the PF/PF-pascal/Caltech-101 and TSS datasets
 
 """
 
-def main():
+def main(passed_arguments=None):
 
     # Argument parsing
-    args,arg_groups = ArgumentParser(mode='eval').parse()
+    args,arg_groups = ArgumentParser(mode='eval').parse(passed_arguments)
     print(args)
 
     # check provided models and deduce if single/two-stage model should be used
@@ -75,7 +76,8 @@ def main():
 
         if output_size == 6:
             geometric_model = 'affine'
-
+        elif output_size == 3:
+            geometric_model = 'affine_simple'
         elif output_size == 8 or output_size == 9:
             geometric_model = 'hom'
         else: 
@@ -114,7 +116,12 @@ def main():
         collate_fn = default_collate
         csv_file = 'test_pairs_pf.csv'
 
-    if args.eval_dataset == 'pf-pascal':  
+    elif args.eval_dataset == '3d':
+        Dataset = Dataset3D
+        collate_fn = default_collate
+        csv_file = 'all_pairs_3d.csv'
+
+    elif args.eval_dataset == 'pf-pascal':  
         Dataset = PFPascalDataset
         collate_fn = default_collate
         csv_file = 'all_pairs_pf_pascal.csv'    
@@ -152,10 +159,10 @@ def main():
 
     if args.eval_dataset == 'pf' or args.eval_dataset == 'pf-pascal':  
         metric = 'pck'
-
+    elif args.eval_dataset == '3d':
+        metric = 'absdiff'
     elif args.eval_dataset == 'caltech':
         metric = 'area'
-
     elif args.eval_dataset == 'tss':
         metric = 'flow'
         
@@ -176,6 +183,7 @@ def main():
                          batch_tnf,
                          batch_size,
                          args)
+    return stats 
 
 if __name__ == '__main__':
     main()

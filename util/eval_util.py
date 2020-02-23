@@ -2,8 +2,8 @@ import torch
 import numpy as np
 import os
 from skimage import draw
-from geotnf.transformation import GeometricTnf,homography_mat_from_4_pts
-from geotnf.point_tnf import compose_H_matrices, compose_aff_matrices, compose_tps
+from geotnf.transformation import GeometricTnf,homography_mat_from_4_pts,affine_mat_from_simple
+from geotnf.point_tnf import compose_H_matrices, compose_aff_matrices, compose_tps, compose_simple
 from geotnf.flow import th_sampling_grid_to_np_flow, write_flo_file
 import torch.nn.functional as F
 from data.pf_dataset import PFDataset, PFPascalDataset
@@ -15,13 +15,19 @@ from util.torch_util import expand_dim
 from geotnf.point_tnf import PointTnf
 
 def eval_model_multistage(model,geometric_model,num_of_iters,source_image,target_image):
-    geoTnf = GeometricTnf(geometric_model=geometric_model, use_cuda=torch.cuda.is_available())
+    if geometric_model == 'affine_simple':
+        geoTnf = GeometricTnf(geometric_model='affine', use_cuda=torch.cuda.is_available())
+    else:
+        geoTnf = GeometricTnf(geometric_model=geometric_model, use_cuda=torch.cuda.is_available())
     for it in range(num_of_iters):
         # First iteration
         if it==0:
             theta = model({'source_image':source_image,'target_image':target_image})
             if geometric_model=='hom':
                 theta = homography_mat_from_4_pts(theta)
+            elif geometric_model == 'affine_simple':
+                theta_simple = theta
+                theta = affine_mat_from_simple(theta_simple)
             continue
         
         # Subsequent iterations
@@ -35,7 +41,10 @@ def eval_model_multistage(model,geometric_model,num_of_iters,source_image,target
 
         # update accumultated transformation
         if geometric_model=='hom':
-            theta = compose_H_matrices(theta,homography_mat_from_4_pts(theta_iter))            
+            theta = compose_H_matrices(theta,homography_mat_from_4_pts(theta_iter))   
+        elif geometric_model == 'affine_simple':
+            theta_simple = compose_simple(theta_simple, theta_iter)
+            theta = affine_mat_from_simple(theta_simple)         
         elif geometric_model=='affine':
             theta = compose_aff_matrices(theta,theta_iter)
         elif geometric_model=='tps':
@@ -44,7 +53,8 @@ def eval_model_multistage(model,geometric_model,num_of_iters,source_image,target
     # warp one last time using final transformation
     warped_image = None
     warped_image = geoTnf(source_image,theta)
-
+    if geometric_model == 'affine_simple':
+        theta = theta_simple
     return (theta,warped_image)
 
 def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,dataset,dataloader,batch_tnf,batch_size,args=None):
@@ -61,6 +71,9 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
     if metric=='pck':  
         metrics = ['pck']
         metric_fun = pck_metric
+    elif metric == 'absdiff':
+        metrics = ['rotate_diff', 'scale_diff', 'shift_diff']
+        metric_fun = absdiff_metrics
     if metric=='dist':
         metrics = ['dist']
         metric_fun = point_dist_metric
@@ -107,7 +120,16 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
     if metric=='flow':
         print('Flow results have been saved to :'+args.flow_output_dir)
         return stats
-
+    elif metric=='absdiff':
+        for key in stats.keys():
+            print('=== Results '+key+' ===')
+            for metric in metrics:
+                results=stats[key][metric]
+                print('Total: '+str(results.size))
+                print(metric+' mean:','{:.2%}'.format(np.mean(results)))
+                print(metric+' median:','{:.2%}'.format(np.median(results)))
+                    
+            print('\n')
     # Print results
     for key in stats.keys():
         print('=== Results '+key+' ===')
@@ -120,6 +142,19 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
             print(metric+':','{:.2%}'.format(np.mean(filtered_results)))
                 
         print('\n')
+        
+    return stats
+
+
+def absdiff_metrics(batch,batch_start_idx,theta_1,theta_2,geometric_model_1,geometric_model_2,stats,args,use_cuda=True):
+    affine_simple_values = batch['affine_simple_values']
+    
+    current_batch_size=batch['source_im_size'].size(0)
+    indices = range(batch_start_idx,batch_start_idx+current_batch_size)
+
+    stats[geometric_model_1]['rotate_diff'][indices] = abs((affine_simple_values[:, 0] - theta_1[:, 0]).cpu().numpy())
+    stats[geometric_model_1]['scale_diff'][indices] = abs((affine_simple_values[:, 1] - theta_1[:, 1]).cpu().numpy())
+    stats[geometric_model_1]['shift_diff'][indices] = abs((affine_simple_values[:, 2] - theta_1[:, 2]).cpu().numpy())
         
     return stats
 
