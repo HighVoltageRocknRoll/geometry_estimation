@@ -63,7 +63,7 @@ def warp_image(image, flow):
     h_src,w_src=image.shape[0],image.shape[1]
     sampling_grid_torch = np_flow_to_th_sampling_grid(flow, h_src, w_src)
     image_torch = Variable(torch.FloatTensor(image.astype(np.float32)).transpose(1,2).transpose(0,1).unsqueeze(0))
-    warped_image_torch = F.grid_sample(image_torch, sampling_grid_torch)
+    warped_image_torch = F.grid_sample(image_torch, sampling_grid_torch, align_corners=True)
     warped_image = warped_image_torch.data.squeeze(0).transpose(0,1).transpose(1,2).numpy().astype(np.uint8)
     return warped_image
 

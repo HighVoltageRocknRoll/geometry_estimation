@@ -291,7 +291,7 @@ def area_metrics(batch,batch_start_idx,theta_1,theta_2,geometric_model_1,geometr
         
         # stage 1
         grid_1 = pointsToGrid(tnf_1(theta_1[b,:].unsqueeze(0),grid_XY_vec))
-        warped_mask_1 = F.grid_sample(source_mask, grid_1)            
+        warped_mask_1 = F.grid_sample(source_mask, grid_1, align_corners=True)            
         flow_1 = th_sampling_grid_to_np_flow(source_grid=grid_1,h_src=h_src,w_src=w_src)
         
         stats[geometric_model_1]['intersection_over_union'][idx] = intersection_over_union(warped_mask_1,target_mask).cpu().numpy()
@@ -300,7 +300,7 @@ def area_metrics(batch,batch_start_idx,theta_1,theta_2,geometric_model_1,geometr
         
         if two_stage:
             grid_1_2 = pointsToGrid(tnf_1(theta_1[b,:].unsqueeze(0),tnf_2(theta_2[b,:].unsqueeze(0),grid_XY_vec)))
-            warped_mask_1_2 = F.grid_sample(source_mask, grid_1_2)
+            warped_mask_1_2 = F.grid_sample(source_mask, grid_1_2, align_corners=True)
             flow_1_2 = th_sampling_grid_to_np_flow(source_grid=grid_1_2,h_src=h_src,w_src=w_src)
             
             stats[geometric_model_1+'_'+geometric_model_2]['intersection_over_union'][idx] = intersection_over_union(warped_mask_1_2,target_mask).cpu().numpy()

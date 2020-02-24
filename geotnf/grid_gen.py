@@ -25,7 +25,7 @@ class AffineGridGen(Module):
         theta = theta.contiguous()
         batch_size = theta.size()[0]
         out_size = torch.Size((batch_size,self.out_ch,self.out_h,self.out_w))
-        return F.affine_grid(theta, out_size)
+        return F.affine_grid(theta, out_size, align_corners=True)
     
 class AffineGridGenV2(Module):
     def __init__(self, out_h=240, out_w=240, use_cuda=True):

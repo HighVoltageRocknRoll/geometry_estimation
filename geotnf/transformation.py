@@ -59,7 +59,7 @@ class ComposedGeometricTnf(object):
         sampling_grid_aff = torch.add((in_bound_mask_aff.float()-1)*(1e10),sampling_grid_aff)       
         
         # compose transformations
-        sampling_grid_aff_tps_comp = F.grid_sample(sampling_grid_aff.transpose(2,3).transpose(1,2), sampling_grid_aff_tps).transpose(1,2).transpose(2,3)
+        sampling_grid_aff_tps_comp = F.grid_sample(sampling_grid_aff.transpose(2,3).transpose(1,2), sampling_grid_aff_tps, align_corners=True).transpose(1,2).transpose(2,3)
             
         # put 1e10 value in region out of bounds of sampling_grid_aff_tps_comp
         in_bound_mask_aff_tps=((sampling_grid_aff_tps[:,:,:,0]>-1) * (sampling_grid_aff_tps[:,:,:,0]<1) * (sampling_grid_aff_tps[:,:,:,1]>-1) * (sampling_grid_aff_tps[:,:,:,1]<1)).unsqueeze(3)
@@ -68,7 +68,7 @@ class ComposedGeometricTnf(object):
         sampling_grid_aff_tps_comp = torch.add((in_bound_mask_aff_tps.float()-1)*(1e10),sampling_grid_aff_tps_comp)       
 
         # sample transformed image
-        warped_image_batch = F.grid_sample(image_batch, sampling_grid_aff_tps_comp)
+        warped_image_batch = F.grid_sample(image_batch, sampling_grid_aff_tps_comp, align_corners=True)
         
         return warped_image_batch
 
@@ -137,7 +137,7 @@ class GeometricTnf(object):
             return sampling_grid
         
         # sample transformed image
-        warped_image_batch = F.grid_sample(image_batch, sampling_grid)
+        warped_image_batch = F.grid_sample(image_batch, sampling_grid, align_corners=True)
         
         if return_sampling_grid and return_warped_image:
             return (warped_image_batch,sampling_grid)
@@ -411,7 +411,7 @@ class AffineGridGen(Module):
         theta = theta.contiguous()
         batch_size = theta.size()[0]
         out_size = torch.Size((batch_size,self.out_ch,self.out_h,self.out_w))
-        return F.affine_grid(theta, out_size)
+        return F.affine_grid(theta, out_size, align_corners=True)
     
 class AffineGridGenV2(Module):
     def __init__(self, out_h=240, out_w=240, use_cuda=True):
