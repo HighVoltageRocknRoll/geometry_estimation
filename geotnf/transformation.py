@@ -532,19 +532,22 @@ def homography_mat_from_4_pts(theta):
     return H
 
 def affine_mat_from_simple(theta):
-    b=theta.size(0)
-    if not theta.size()==(b,3):
-        theta = theta.view(b,3)
-        theta = theta.contiguous()
+    b = theta.size(0)
+    if theta.size() == (b, 3):
+        tx = Variable(torch.zeros(b))
+        if theta.is_cuda:
+            tx = tx.cuda()
+    elif theta.size() == (b, 4):
+        tx = theta[:, 3]
+    else:
+        raise ValueError("Calling affine mat simple constructing from theta size %s" % theta.size().__str__())
     
     # All elements should have shape of (batch_size) for correct torch.stack
     cos_alpha = torch.cos(theta[:, 0]) * theta[:, 1]
     sin_alpha = torch.sin(theta[:, 0]) * theta[:, 1]
-    zero = Variable(torch.zeros(b))
-    if theta.is_cuda:
-        zero = zero.cuda()
+    ty = theta[:, 2]
         
-    A = torch.stack((cos_alpha, -sin_alpha, zero, sin_alpha, cos_alpha, theta[:, 2]), 1)
+    A = torch.stack((cos_alpha, -sin_alpha, tx, sin_alpha, cos_alpha, ty), 1)
 
     return A
 

@@ -62,6 +62,8 @@ def main():
         cnn_output_dim = 6
     elif args.geometric_model == 'affine_simple':
         cnn_output_dim = 3
+    elif args.geometric_model == 'affine_simple_4':
+        cnn_output_dim = 4
     elif args.geometric_model=='hom' and args.four_point_hom:
         cnn_output_dim = 8
     elif args.geometric_model=='hom' and not args.four_point_hom:
@@ -75,6 +77,10 @@ def main():
 
     if args.geometric_model == 'affine_simple':
         init_theta = torch.tensor([0, 1, 0], device = device)
+        model.FeatureRegression.linear.bias.data += init_theta
+    
+    if args.geometric_model == 'affine_simple_4':
+        init_theta = torch.tensor([0, 1, 0, 0], device = device)
         model.FeatureRegression.linear.bias.data += init_theta
 
     if args.geometric_model=='hom' and not args.four_point_hom:
@@ -109,7 +115,7 @@ def main():
 			       random_sample=args.random_sample)
 
     # Set Tnf pair generation func
-    if args.geometric_model == 'affine_simple':
+    if args.geometric_model == 'affine_simple' or args.geometric_model == 'affine_simple_4':
         pair_generation_tnf = SynthPairTnf(geometric_model='affine',
 				       use_cuda=use_cuda)
     else:

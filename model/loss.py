@@ -30,7 +30,7 @@ class TransformedGridLoss(nn.Module):
         if self.geometric_model=='affine':
             P_prime = self.pointTnf.affPointTnf(theta,P)
             P_prime_GT = self.pointTnf.affPointTnf(theta_GT,P)
-        elif self.geometric_model == 'affine_simple':
+        elif self.geometric_model == 'affine_simple' or self.geometric_model == 'affine_simple_4':
             theta_aff = affine_mat_from_simple(theta)
             P_prime = self.pointTnf.affPointTnf(theta_aff,P)
             P_prime_GT = self.pointTnf.affPointTnf(theta_GT,P)

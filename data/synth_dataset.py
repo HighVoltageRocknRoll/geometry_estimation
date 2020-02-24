@@ -81,6 +81,12 @@ class SynthDataset(Dataset):
                 cos_alpha = np.cos(rot_angle) * scale_value
                 sin_alpha = np.sin(rot_angle) * scale_value
                 theta = np.array([cos_alpha, -sin_alpha, 0.0, sin_alpha, cos_alpha, ty])
+            
+            if self.geometric_model == 'affine_simple_4':
+                rot_angle, scale_value, ty, tx = theta
+                cos_alpha = np.cos(rot_angle) * scale_value
+                sin_alpha = np.sin(rot_angle) * scale_value
+                theta = np.array([cos_alpha, -sin_alpha, tx, sin_alpha, cos_alpha, ty])
 
             if self.geometric_model=='affine':
                 # reshape theta to 2x3 matrix [A|t] where 
@@ -92,7 +98,7 @@ class SynthDataset(Dataset):
             if self.geometric_model=='afftps':
                 theta[[0,1,2,3,4,5]] = theta[[3,2,5,1,0,4]]
         else:
-            if self.geometric_model == 'affine_simple':
+            if self.geometric_model == 'affine_simple' or self.geometric_model == 'affine_simple_4':
                 rot_angle, scale_value, ty = np.random.normal(0.0, (0.75, 0.015, 0.01))
                 scale_value += 1.0
                 tx = (2 * np.random.rand(1) - 1) * 0.2  # between -0.2 and 0.2
