@@ -119,14 +119,14 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
         # print('Batch: [{}/{} ({:.0f}%)]'.format(i, len(dataloader), 100. * i / len(dataloader)))
 
 
-    if geometric_model_1 == 'affine_simple' or geometric_model == 'affine_simple_4':
+    if geometric_model_1 == 'affine_simple' or geometric_model_1 == 'affine_simple_4':
         for key in stats.keys():
             print('=== Results '+key+' ===')
             for metric in metrics:
                 results=stats[key][metric]
                 print('Total: '+str(results.size))
-                print(metric+' mean:','{:.2%}'.format(np.mean(results)))
-                print(metric+' median:','{:.2%}'.format(np.median(results)))
+                print(metric+' mean:','{:.2}'.format(np.mean(results)))
+                print(metric+' median:','{:.2}'.format(np.median(results)))
                     
             print('\n')
     else:
