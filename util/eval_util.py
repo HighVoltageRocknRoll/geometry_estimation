@@ -90,6 +90,10 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
     for key in stats.keys():
         for metric in metrics:
             stats[key][metric] = np.zeros((N,1))
+        if key == 'affine_simple' or key == 'affine_simple_4':
+            stats[key]['rotate_value'] = np.zeros((N,1))
+            stats[key]['scale_value'] = np.zeros((N,1))
+            stats[key]['shift_value'] = np.zeros((N,1))
 
     # Compute
     for i, batch in enumerate(tqdm(dataloader, desc='Batch:')):
@@ -159,6 +163,10 @@ def absdiff_metrics(batch,batch_start_idx,theta_1,theta_2,geometric_model_1,geom
     stats[geometric_model_1]['rotate_diff'][indices] = np.abs((affine_simple_values[:, 0] - theta_1[:, 0]).cpu().detach().numpy())[..., None]
     stats[geometric_model_1]['scale_diff'][indices] = np.abs((affine_simple_values[:, 1] - theta_1[:, 1]).cpu().detach().numpy())[..., None]
     stats[geometric_model_1]['shift_diff'][indices] = np.abs((affine_simple_values[:, 2] - theta_1[:, 2]).cpu().detach().numpy())[..., None]
+
+    stats[geometric_model_1]['rotate_value'][indices] = theta_1[:, 0].cpu().detach().numpy()[..., None]
+    stats[geometric_model_1]['scale_value'][indices] = theta_1[:, 1].cpu().detach().numpy()[..., None]
+    stats[geometric_model_1]['shift_value'][indices] = theta_1[:, 2].cpu().detach().numpy()[..., None]
         
     return stats
 
