@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import os
 from skimage import draw
+from tqdm import tqdm
 from geotnf.transformation import GeometricTnf,homography_mat_from_4_pts,affine_mat_from_simple
 from geotnf.point_tnf import compose_H_matrices, compose_aff_matrices, compose_tps, compose_simple
 from geotnf.flow import th_sampling_grid_to_np_flow, write_flo_file
@@ -91,7 +92,7 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
             stats[key][metric] = np.zeros((N,1))
 
     # Compute
-    for i, batch in enumerate(dataloader):
+    for i, batch in enumerate(tqdm(dataloader, desc='Batch:')):
         batch = batch_tnf(batch)        
         batch_start_idx=batch_size*i
 
@@ -118,7 +119,7 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
         print('Batch: [{}/{} ({:.0f}%)]'.format(i, len(dataloader), 100. * i / len(dataloader)))
 
 
-    if geometric_model_1 == 'affine_simple':
+    if geometric_model_1 == 'affine_simple' or geometric_model == 'affine_simple_4':
         for key in stats.keys():
             print('=== Results '+key+' ===')
             for metric in metrics:
