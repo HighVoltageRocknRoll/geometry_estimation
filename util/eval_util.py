@@ -117,10 +117,8 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
             
         print('Batch: [{}/{} ({:.0f}%)]'.format(i, len(dataloader), 100. * i / len(dataloader)))
 
-    if metric=='flow':
-        print('Flow results have been saved to :'+args.flow_output_dir)
-        return stats
-    elif metric=='absdiff':
+
+    if geometric_model_1 == 'affine_simple':
         for key in stats.keys():
             print('=== Results '+key+' ===')
             for metric in metrics:
@@ -130,19 +128,24 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
                 print(metric+' median:','{:.2%}'.format(np.median(results)))
                     
             print('\n')
-    # Print results
-    for key in stats.keys():
-        print('=== Results '+key+' ===')
-        for metric in metrics:
-            results=stats[key][metric]
-            good_idx = np.flatnonzero((results!=-1) * ~np.isnan(results))
-            print('Total: '+str(results.size))
-            print('Valid: '+str(good_idx.size)) 
-            filtered_results = results[good_idx]
-            print(metric+':','{:.2%}'.format(np.mean(filtered_results)))
-                
-        print('\n')
-        
+    else:
+        if metric=='flow':
+            print('Flow results have been saved to :'+args.flow_output_dir)
+            return stats
+            
+        # Print results
+        for key in stats.keys():
+            print('=== Results '+key+' ===')
+            for metric in metrics:
+                results=stats[key][metric]
+                good_idx = np.flatnonzero((results!=-1) * ~np.isnan(results))
+                print('Total: '+str(results.size))
+                print('Valid: '+str(good_idx.size)) 
+                filtered_results = results[good_idx]
+                print(metric+':','{:.2%}'.format(np.mean(filtered_results)))
+                    
+            print('\n')
+            
     return stats
 
 
