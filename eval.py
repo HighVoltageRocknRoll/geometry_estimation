@@ -78,6 +78,8 @@ def main(passed_arguments=None):
             geometric_model = 'affine'
         elif output_size == 3:
             geometric_model = 'affine_simple'
+        elif output_size == 4:
+            geometric_model = 'affine_simple_4'
         elif output_size == 8 or output_size == 9:
             geometric_model = 'hom'
         else: 

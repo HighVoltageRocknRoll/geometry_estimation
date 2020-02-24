@@ -108,6 +108,8 @@ def compose_simple(theta_1,theta_2):
     theta[:, 0] = theta_1[:, 0] + theta_2[:, 0]
     theta[:, 1] = theta_1[:, 1] * theta_2[:, 1]
     theta[:, 2] = theta_1[:, 2] + theta_2[:, 2]
+    if theta.size(1) == 4:
+        theta[:, 3] = theta_1[:, 3] + theta_2[:, 3]
     return theta
 
 def compose_tps(theta_1,theta_2):

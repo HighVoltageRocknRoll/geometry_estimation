@@ -15,7 +15,7 @@ from util.torch_util import expand_dim
 from geotnf.point_tnf import PointTnf
 
 def eval_model_multistage(model,geometric_model,num_of_iters,source_image,target_image):
-    if geometric_model == 'affine_simple':
+    if geometric_model == 'affine_simple' or geometric_model == 'affine_simple_4':
         geoTnf = GeometricTnf(geometric_model='affine', use_cuda=torch.cuda.is_available())
     else:
         geoTnf = GeometricTnf(geometric_model=geometric_model, use_cuda=torch.cuda.is_available())
@@ -25,7 +25,7 @@ def eval_model_multistage(model,geometric_model,num_of_iters,source_image,target
             theta = model({'source_image':source_image,'target_image':target_image})
             if geometric_model=='hom':
                 theta = homography_mat_from_4_pts(theta)
-            elif geometric_model == 'affine_simple':
+            elif geometric_model == 'affine_simple' or geometric_model == 'affine_simple_4':
                 theta_simple = theta
                 theta = affine_mat_from_simple(theta_simple)
             continue
@@ -42,7 +42,7 @@ def eval_model_multistage(model,geometric_model,num_of_iters,source_image,target
         # update accumultated transformation
         if geometric_model=='hom':
             theta = compose_H_matrices(theta,homography_mat_from_4_pts(theta_iter))   
-        elif geometric_model == 'affine_simple':
+        elif geometric_model == 'affine_simple' or geometric_model == 'affine_simple_4':
             theta_simple = compose_simple(theta_simple, theta_iter)
             theta = affine_mat_from_simple(theta_simple)         
         elif geometric_model=='affine':
@@ -53,7 +53,7 @@ def eval_model_multistage(model,geometric_model,num_of_iters,source_image,target
     # warp one last time using final transformation
     warped_image = None
     warped_image = geoTnf(source_image,theta)
-    if geometric_model == 'affine_simple':
+    if geometric_model == 'affine_simple' or geometric_model == 'affine_simple_4':
         theta = theta_simple
     return (theta,warped_image)
 
