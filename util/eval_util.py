@@ -116,7 +116,7 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
         if metric_fun is not None:
             stats = metric_fun(batch,batch_start_idx,theta_1,theta_2,geometric_model_1,geometric_model_2,stats,args)
             
-        print('Batch: [{}/{} ({:.0f}%)]'.format(i, len(dataloader), 100. * i / len(dataloader)))
+        # print('Batch: [{}/{} ({:.0f}%)]'.format(i, len(dataloader), 100. * i / len(dataloader)))
 
 
     if geometric_model_1 == 'affine_simple' or geometric_model == 'affine_simple_4':
