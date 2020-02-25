@@ -176,6 +176,9 @@ class SynthPairTnf(object):
             
         b, c, h, w = image_batch.size()
               
+        b, td = theta_batch.size()
+        if td == 3 or td == 4:
+            theta_batch = affine_mat_from_simple(theta_batch)
         # generate symmetrically padded image for bigger sampling region
         image_batch = self.symmetricImagePad(image_batch,self.padding_factor)
         
