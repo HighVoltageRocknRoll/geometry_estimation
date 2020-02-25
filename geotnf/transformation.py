@@ -177,14 +177,18 @@ class SynthPairTnf(object):
         b, c, h, w = image_batch.size()
               
         b, td = theta_batch.size()
-        if td == 3 or td == 4:
-            theta_batch = affine_mat_from_simple(theta_batch)
+        
         # generate symmetrically padded image for bigger sampling region
         image_batch = self.symmetricImagePad(image_batch,self.padding_factor)
         
         # convert to variables
         image_batch = Variable(image_batch,requires_grad=False)
         theta_batch =  Variable(theta_batch,requires_grad=False)        
+
+        theta_batch_remember = None
+        if td == 3 or td == 4:
+            theta_batch_remember = theta_batch
+            theta_batch = affine_mat_from_simple(theta_batch)
 
         # get cropped image
         cropped_image_batch = self.rescalingTnf(image_batch=image_batch,
@@ -214,8 +218,10 @@ class SynthPairTnf(object):
             # apply mask
             cropped_image_batch = torch.mul(cropped_image_batch,1-mask_1)+torch.mul(cropped_image_batch[rolled_indices_1,:],mask_1)
             warped_image_batch = torch.mul(warped_image_batch,1-mask_2)+torch.mul(warped_image_batch[rolled_indices_1,:],mask_2)
-        
-        return {'source_image': cropped_image_batch, 'target_image': warped_image_batch, 'theta_GT': theta_batch}
+        if theta_batch_remember is None:
+            return {'source_image': cropped_image_batch, 'target_image': warped_image_batch, 'theta_GT': theta_batch}
+        else:
+            return {'source_image': cropped_image_batch, 'target_image': warped_image_batch, 'theta_GT': theta_batch_remember}
         
 
     def symmetricImagePad(self, image_batch, padding_factor):
