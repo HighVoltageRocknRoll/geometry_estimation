@@ -130,7 +130,7 @@ class SynthDatasetME(Dataset):
         self.dataset_image_path = dataset_image_path
         self.geometric_model = geometric_model
         self.crop = crop
-        self.me_handler = MEHandler(int(h-h*crop), int(w-w*crop), loss_metric='colorindependent', runs_to_warm_up=2)
+        self.me_handler = MEHandler(int(h-h*crop), int(w-w*crop), loss_metric='colorindependent', runs_to_warm_up=1)
         
     def __len__(self):
         return len(self.train_data)
