@@ -22,7 +22,8 @@ class ArgumentParser():
         model_params.add_argument('--fr-kernel-sizes', nargs='+', type=int, default=[7,5,5], help='kernels sizes in feat.reg. conv layers')
         model_params.add_argument('--fr-channels', nargs='+', type=int, default=[225,128,64], help='channels in feat. reg. conv layers')
         model_params.add_argument('--matching-type', type=str, default='correlation', help='correlation/subtraction/concatenation')
-        model_params.add_argument('--normalize-matches', type=str_to_bool, nargs='?', const=True, default=True, help='perform L2 normalization')        
+        model_params.add_argument('--normalize-matches', type=str_to_bool, nargs='?', const=True, default=True, help='perform L2 normalization')   
+        model_params.add_argument('--use-me', type=str_to_bool, nargs='?', const=True, default=False, help='Use ME based model')     
 
     def add_base_train_parameters(self):
         base_params = self.parser.add_argument_group('base')
@@ -48,6 +49,9 @@ class ArgumentParser():
         # Dataset parameters
         dataset_params.add_argument('--dataset-csv-path', type=str, default='', help='path to training transformation csv folder')
         dataset_params.add_argument('--dataset-image-path', type=str, default='', help='path to folder containing training images')
+        dataset_params.add_argument('--input-height', type=int, default=1080, help='Height of input images (used in ME model)')        
+        dataset_params.add_argument('--input-width', type=int, default=1920, help='Width of input images (used in ME model)')  
+        dataset_params.add_argument('--crop-factor', type=float, default=0.2, help='Cropping after synthetic image warping (used in ME model)')  
         # Random synth dataset parameters
         dataset_params.add_argument('--four-point-hom', type=str_to_bool, nargs='?', const=True, default=True, help='use 4 pt parametrization for homography')
         dataset_params.add_argument('--random-sample', type=str_to_bool, nargs='?', const=True, default=True, help='sample random transformations')
@@ -55,8 +59,8 @@ class ArgumentParser():
         dataset_params.add_argument('--random-s', type=float, default=0.5, help='random transformation translation')
         dataset_params.add_argument('--random-alpha', type=float, default=1/6, help='random transformation translation')
         dataset_params.add_argument('--random-t-tps', type=float, default=0.4, help='random transformation translation')        
+              
         
-
     def add_train_parameters(self):
         train_params = self.parser.add_argument_group('train')
         # Optimization parameters 

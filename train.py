@@ -13,9 +13,10 @@ from model.cnn_geometric_model import CNNGeometric
 from model.loss import TransformedGridLoss
 
 from data.synth_dataset import SynthDataset
+from data.synth_dataset_me import SynthDatasetME
 from data.download_datasets import download_pascal
 
-from geotnf.transformation import SynthPairTnf
+from geotnf.transformation import SynthPairTnf, DummyTnf
 
 from image.normalization import NormalizeImageDict
 
@@ -38,38 +39,21 @@ def main():
     print(args)
 
     use_cuda = torch.cuda.is_available()
+    use_me = args.use_me
     device = torch.device('cuda') if use_cuda else torch.device('cpu')
     # Seed
     torch.manual_seed(args.seed)
     if use_cuda:
         torch.cuda.manual_seed(args.seed)
 
-    # Download dataset if needed and set paths
-    if args.training_dataset == 'pascal':
-
-        if args.dataset_image_path == '' and not os.path.exists('datasets/pascal-voc11/TrainVal'):
-            download_pascal('datasets/pascal-voc11/')
-
-        if args.dataset_image_path == '':
-            args.dataset_image_path = 'datasets/pascal-voc11/'
-
-        args.dataset_csv_path = 'training_data/pascal-random'        
-
-
     # CNN model and loss
     print('Creating CNN model...')
-    if args.geometric_model=='affine':
-        cnn_output_dim = 6
-    elif args.geometric_model == 'affine_simple':
+    if args.geometric_model == 'affine_simple':
         cnn_output_dim = 3
     elif args.geometric_model == 'affine_simple_4':
         cnn_output_dim = 4
-    elif args.geometric_model=='hom' and args.four_point_hom:
-        cnn_output_dim = 8
-    elif args.geometric_model=='hom' and not args.four_point_hom:
-        cnn_output_dim = 9
-    elif args.geometric_model=='tps':
-        cnn_output_dim = 18
+    else:
+        raise NotImplementedError('Specified geometric model is unsupported')
 
     model = CNNGeometric(use_cuda=use_cuda,
                          output_dim=cnn_output_dim,
@@ -79,17 +63,9 @@ def main():
         init_theta = torch.tensor([0, 1, 0], device = device)
         model.FeatureRegression.linear.bias.data += init_theta
     
-    if args.geometric_model == 'affine_simple_4':
+    elif args.geometric_model == 'affine_simple_4':
         init_theta = torch.tensor([0, 1, 0, 0], device = device)
         model.FeatureRegression.linear.bias.data += init_theta
-
-    if args.geometric_model=='hom' and not args.four_point_hom:
-        init_theta = torch.tensor([1,0,0,0,1,0,0,0,1], device = device)
-        model.FeatureRegression.linear.bias.data+=init_theta
-
-    if args.geometric_model=='hom' and args.four_point_hom:
-        init_theta = torch.tensor([-1, -1, 1, 1, -1, 1, -1, 1], device = device)
-        model.FeatureRegression.linear.bias.data+=init_theta
 
     if args.use_mse_loss:
         print('Using MSE loss...')
@@ -100,27 +76,43 @@ def main():
                                    geometric_model=args.geometric_model)
 
     # Initialize Dataset objects
-    dataset = SynthDataset(geometric_model=args.geometric_model,
-               dataset_csv_path=args.dataset_csv_path,
-               dataset_csv_file='train.csv',
-			   dataset_image_path=args.dataset_image_path,
-			   transform=NormalizeImageDict(['image']),
-			   random_sample=args.random_sample)
+    if use_me:
+        dataset = SynthDatasetME(geometric_model=args.geometric_model,
+                        dataset_csv_path=args.dataset_csv_path,
+                        dataset_csv_file='train.csv',
+                        dataset_image_path=args.dataset_image_path,
+                        h=args.input_height, w=args.input_width, crop=args.crop_factor)
+        
+        dataset_val = SynthDatasetME(geometric_model=args.geometric_model,
+                        dataset_csv_path=args.dataset_csv_path,
+                        dataset_csv_file='val.csv',
+                        dataset_image_path=args.dataset_image_path,
+                        h=args.input_height, w=args.input_width, crop=args.crop_factor)
 
-    dataset_val = SynthDataset(geometric_model=args.geometric_model,
-                   dataset_csv_path=args.dataset_csv_path,
-                   dataset_csv_file='val.csv',
-			       dataset_image_path=args.dataset_image_path,
-			       transform=NormalizeImageDict(['image']),
-			       random_sample=args.random_sample)
+    else:
+
+        dataset = SynthDataset(geometric_model=args.geometric_model,
+                        dataset_csv_path=args.dataset_csv_path,
+                        dataset_csv_file='train.csv',
+                        dataset_image_path=args.dataset_image_path,
+                        transform=NormalizeImageDict(['image']),
+                        random_sample=args.random_sample)
+
+        dataset_val = SynthDataset(geometric_model=args.geometric_model,
+                        dataset_csv_path=args.dataset_csv_path,
+                        dataset_csv_file='val.csv',
+                        dataset_image_path=args.dataset_image_path,
+                        transform=NormalizeImageDict(['image']),
+                        random_sample=args.random_sample)
 
     # Set Tnf pair generation func
-    if args.geometric_model == 'affine_simple' or args.geometric_model == 'affine_simple_4':
+    if use_me:
+        pair_generation_tnf = DummyTnf(use_cuda=use_cuda)
+    elif args.geometric_model == 'affine_simple' or args.geometric_model == 'affine_simple_4':
         pair_generation_tnf = SynthPairTnf(geometric_model='affine',
 				       use_cuda=use_cuda)
     else:
-        pair_generation_tnf = SynthPairTnf(geometric_model=args.geometric_model,
-				       use_cuda=use_cuda)
+        raise NotImplementedError('Specified geometric model is unsupported')
 
     # Initialize DataLoaders
     dataloader = DataLoader(dataset, batch_size=args.batch_size,
@@ -136,7 +128,6 @@ def main():
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
                                                                T_max=args.lr_max_iter,
                                                                eta_min=1e-6)
-        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
     else:
         scheduler = False
 
@@ -164,9 +155,15 @@ def main():
 
     logs_writer = SummaryWriter(tb_dir)
     # add graph, to do so we have to generate a dummy input to pass along with the graph
-    dummy_input = {'source_image': torch.rand([args.batch_size, 3, 240, 240], device = device),
-                   'target_image': torch.rand([args.batch_size, 3, 240, 240], device = device),
-                   'theta_GT': torch.rand([16, 2, 3], device = device)}
+    if use_me:
+        dummy_input = {'mv_L2R': torch.rand([args.batch_size, 2, 216, 384], device = device),
+                       'mv_R2L': torch.rand([args.batch_size, 2, 216, 384], device = device),
+                       'theta_GT': torch.rand([args.batch_size, 4], device = device)}
+    else:
+
+        dummy_input = {'source_image': torch.rand([args.batch_size, 3, 240, 240], device = device),
+                       'target_image': torch.rand([args.batch_size, 3, 240, 240], device = device),
+                       'theta_GT': torch.rand([args.batch_size, 2, 3], device = device)}
 
     logs_writer.add_graph(model, dummy_input)
 
@@ -206,4 +203,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-# python train.py --feature-extraction-cnn resnet101 --geometric-model affine_simple --trained-model-fn first --trained-model-dir C:/Users/22k_koz/Desktop/cnngeometric_pytorch/trained_models --training-dataset 3d --train-fe False --dataset-csv-path C:/Users/22k_koz/Desktop/cnngeometric_pytorch/training_data/3d-random --dataset-image-path C:/Users/22k_koz/Desktop/3d_pictures_gt --num-epochs 1
+# train.py --geometric-model affine_simple_4 --use-me True --training-dataset 3d --dataset-csv-path ./training_data/3d-random --dataset-image-path ../3d_pictures_raw --fr-channels 4 64 128 128 64 --num-epochs 1

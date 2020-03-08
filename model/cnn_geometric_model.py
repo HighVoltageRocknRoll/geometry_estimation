@@ -141,6 +141,39 @@ class FeatureRegression(nn.Module):
         x = x.reshape(x.size(0), -1)
         x = self.linear(x)
         return x
+
+class MERegression(nn.Module):
+    def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[4,64,128,128,64]):
+        super(MERegression, self).__init__()
+        nn_modules = list()
+        input_size = np.array([216,384], dtype=int)
+        k_size = 3
+        conv_sub = k_size-1
+        num_blocks = len(channels) - 1
+        for i in range(num_blocks):
+            ch_in = channels[i]
+            ch_out = channels[i+1]            
+            nn_modules.append(nn.Conv2d(ch_in, ch_out, kernel_size=k_size, padding=0))
+            input_size -= conv_sub
+            nn_modules.append(nn.Conv2d(ch_out, ch_out, kernel_size=k_size, padding=0))
+            input_size -= conv_sub
+            if batch_normalization:
+                nn_modules.append(nn.BatchNorm2d(ch_out))
+            nn_modules.append(nn.ReLU(inplace=True))
+            nn_modules.append(nn.MaxPool2d(kernel_size=2))
+            input_size //= 2
+        self.conv = nn.Sequential(*nn_modules)    
+
+        self.linear = nn.Linear(ch_out * input_size[0] * input_size[1], output_dim)
+        if use_cuda:
+            self.conv.cuda()
+            self.linear.cuda()
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = x.reshape(x.size(0), -1)
+        x = self.linear(x)
+        return x
     
     
 class CNNGeometric(nn.Module):
@@ -153,6 +186,7 @@ class CNNGeometric(nn.Module):
                  feature_self_matching=False,
                  normalize_features=True,
                  normalize_matches=True, 
+                 use_me=False,
                  batch_normalization=True, 
                  train_fe=False,
                  use_cuda=True,
@@ -166,36 +200,48 @@ class CNNGeometric(nn.Module):
         self.normalize_features = normalize_features
         self.normalize_matches = normalize_matches
         self.return_correlation = return_correlation
-        self.FeatureExtraction = FeatureExtraction(train_fe=train_fe,
-                                                   feature_extraction_cnn=feature_extraction_cnn,
-                                                   last_layer=feature_extraction_last_layer,
-                                                   normalization=normalize_features,
-                                                   use_cuda=self.use_cuda)
-        
-        self.FeatureCorrelation = FeatureCorrelation(shape='3D',normalization=normalize_matches,matching_type=matching_type)        
-        
+        self.use_me = use_me
+        if self.use_me:
+            self.FeatureRegression = MERegression(output_dim,
+                                             use_cuda=self.use_cuda,
+                                             channels=fr_channels,
+                                             batch_normalization=batch_normalization)
+        else:    
+            self.FeatureExtraction = FeatureExtraction(train_fe=train_fe,
+                                                    feature_extraction_cnn=feature_extraction_cnn,
+                                                    last_layer=feature_extraction_last_layer,
+                                                    normalization=normalize_features,
+                                                    use_cuda=self.use_cuda)
+            
+            self.FeatureCorrelation = FeatureCorrelation(shape='3D',normalization=normalize_matches,matching_type=matching_type)        
+            
 
-        self.FeatureRegression = FeatureRegression(output_dim,
-                                                   use_cuda=self.use_cuda,
-                                                   kernel_sizes=fr_kernel_sizes,
-                                                   channels=fr_channels,
-                                                   batch_normalization=batch_normalization)
+            self.FeatureRegression = FeatureRegression(output_dim,
+                                                    use_cuda=self.use_cuda,
+                                                    kernel_sizes=fr_kernel_sizes,
+                                                    channels=fr_channels,
+                                                    batch_normalization=batch_normalization)
 
 
-        self.ReLU = nn.ReLU(inplace=True)
-    
     # used only for foward pass at eval and for training with strong supervision
-    def forward(self, tnf_batch): 
-        # feature extraction
-        feature_A = self.FeatureExtraction(tnf_batch['source_image'])
-        feature_B = self.FeatureExtraction(tnf_batch['target_image'])
-        # feature correlation
-        correlation = self.FeatureCorrelation(feature_A,feature_B)
-        # regression to tnf parameters theta
-        theta = self.FeatureRegression(correlation)
-        
-        if self.return_correlation:
-            return (theta,correlation)
-        else:
+    def forward(self, tnf_batch):
+        if self.use_me:
+            mv_L2R = tnf_batch['mv_L2R']
+            mv_R2L = tnf_batch['mv_R2L']
+            mv_concat = torch.cat((mv_L2R, -mv_R2L), dim=1)
+            theta = self.FeatureRegression(mv_concat)
             return theta
-
+            
+        else:
+            # feature extraction
+            feature_A = self.FeatureExtraction(tnf_batch['source_image'])
+            feature_B = self.FeatureExtraction(tnf_batch['target_image'])
+            # feature correlation
+            correlation = self.FeatureCorrelation(feature_A,feature_B)
+            # regression to tnf parameters theta
+            theta = self.FeatureRegression(correlation)
+            
+            if self.return_correlation:
+                return (theta,correlation)
+            else:
+                return theta
