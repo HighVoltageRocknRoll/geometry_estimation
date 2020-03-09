@@ -698,21 +698,3 @@ class TpsGridGen(Module):
         
         return torch.cat((points_X_prime,points_Y_prime),3)
         
-class DummyTnf(object):
-    """
-    
-    Does nothing, only moving tensors to cuda if needed
-    
-    """
-    def __init__(self, use_cuda=True):
-        assert isinstance(use_cuda, (bool))
-        self.use_cuda = use_cuda
-        
-    def __call__(self, batch):
-        if self.use_cuda:
-            result = {}
-            for key in batch.keys():
-                result[key] = batch[key].cuda()
-            return result
-        else:
-            return batch
