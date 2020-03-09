@@ -81,12 +81,14 @@ def main():
                         dataset_csv_path=args.dataset_csv_path,
                         dataset_csv_file='train.csv',
                         dataset_image_path=args.dataset_image_path,
+                        random_sample=args.random_sample,
                         h=args.input_height, w=args.input_width, crop=args.crop_factor)
         
         dataset_val = SynthDatasetME(geometric_model=args.geometric_model,
                         dataset_csv_path=args.dataset_csv_path,
                         dataset_csv_file='val.csv',
                         dataset_image_path=args.dataset_image_path,
+                        random_sample=args.random_sample,
                         h=args.input_height, w=args.input_width, crop=args.crop_factor)
 
     else:

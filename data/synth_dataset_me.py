@@ -117,42 +117,55 @@ class SynthDatasetME(Dataset):
                  crop,
                  geometric_model='affine_simple_4', 
                  dataset_size=0, 
+                 random_sample=True,
                  use_me=False):
     
         # read csv file
         self.train_data = pd.read_csv(os.path.join(dataset_csv_path,dataset_csv_file))
+        self.random_sample = random_sample
         self.dataset_size = dataset_size
         if dataset_size!=0:
             dataset_size = min((dataset_size,len(self.train_data)))
             self.train_data = self.train_data.iloc[0:dataset_size,:]
         self.img_names = self.train_data.iloc[:,0]
+        if self.random_sample==False:
+            self.theta_array = self.train_data.iloc[:, 1:].values().astype('float')
+        else:
+            self.me_handler = MEHandler(int(h-h*crop), int(w-w*crop), loss_metric='colorindependent', runs_to_warm_up=1)
+            self.crop = crop
         # copy arguments
         self.dataset_image_path = dataset_image_path
         self.geometric_model = geometric_model
-        self.crop = crop
-        self.me_handler = MEHandler(int(h-h*crop), int(w-w*crop), loss_metric='colorindependent', runs_to_warm_up=1)
+        
+        
         
     def __len__(self):
         return len(self.train_data)
 
     def __getitem__(self, idx):
+        if self.random_sample:
+            # read image
+            img_name = os.path.join(self.dataset_image_path, self.img_names[idx])
+            image_L = io.imread(img_name)
 
-        # read image
-        img_name = os.path.join(self.dataset_image_path, self.img_names[idx])
-        image_L = io.imread(img_name)
+            # Warp with random transformations
+            h, w, _ = image_L.shape
+            warper = Warper(h, w, geometric_model=self.geometric_model, crop=self.crop)
+            image_L, image_R = warper.warp(image_L, image_L.copy())
+            theta = warper.get_theta()
 
-        # Warp with random transformations
-        h, w, _ = image_L.shape
-        warper = Warper(h, w, geometric_model=self.geometric_model, crop=self.crop)
-        image_L, image_R = warper.warp(image_L, image_L.copy())
-        theta = warper.get_theta()
+            # Calculate Motion Vectors
+            mv_L2R, mv_R2L = self.me_handler.calculate_disparity(image_L, image_R)
 
-        # Calculate Motion Vectors
-        mv_L2R, mv_R2L = self.me_handler.calculate_disparity(image_L, image_R)
-
-        # permute order of image to CHW
-        # mv_L2R = mv_L2R.transpose(2,0,1)
-        # mv_R2L = mv_R2L.transpose(2,0,1)
+            # permute order to CHW
+            # mv_L2R = mv_L2R.transpose(2,0,1)
+            # mv_R2L = mv_R2L.transpose(2,0,1)
+        else:
+            # read .npz file with Motion Vectors
+            reader = np.load(os.path.join(self.dataset_image_path, self.img_names[idx]))
+            mv_L2R = reader['l2r']
+            mv_R2L = reader['r2l']
+            theta = self.theta_array[idx, :]
 
         # make arrays float tensor for subsequent processing
         mv_L2R = torch.Tensor(mv_L2R.astype(np.float32))
