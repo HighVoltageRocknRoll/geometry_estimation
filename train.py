@@ -16,12 +16,12 @@ from data.synth_dataset import SynthDataset
 from data.synth_dataset_me import SynthDatasetME
 from data.download_datasets import download_pascal
 
-from geotnf.transformation import SynthPairTnf, DummyTnf
+from geotnf.transformation import SynthPairTnf
 
 from image.normalization import NormalizeImageDict
 
 from util.train_test_fn import train, validate_model
-from util.torch_util import save_checkpoint, str_to_bool
+from util.torch_util import save_checkpoint, str_to_bool, BatchTensorToVars
 
 from options.options import ArgumentParser
 
@@ -109,7 +109,7 @@ def main():
 
     # Set Tnf pair generation func
     if use_me:
-        pair_generation_tnf = DummyTnf(use_cuda=use_cuda)
+        pair_generation_tnf = BatchTensorToVars(use_cuda=use_cuda)
     elif args.geometric_model == 'affine_simple' or args.geometric_model == 'affine_simple_4':
         pair_generation_tnf = SynthPairTnf(geometric_model='affine',
 				       use_cuda=use_cuda)

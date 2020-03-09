@@ -24,6 +24,9 @@ class ArgumentParser():
         model_params.add_argument('--matching-type', type=str, default='correlation', help='correlation/subtraction/concatenation')
         model_params.add_argument('--normalize-matches', type=str_to_bool, nargs='?', const=True, default=True, help='perform L2 normalization')   
         model_params.add_argument('--use-me', type=str_to_bool, nargs='?', const=True, default=False, help='Use ME based model')     
+        model_params.add_argument('--input-height', type=int, default=1080, help='Height of input images (used in ME model)')        
+        model_params.add_argument('--input-width', type=int, default=1920, help='Width of input images (used in ME model)')  
+        model_params.add_argument('--crop-factor', type=float, default=0.2, help='Cropping after synthetic image warping (used in ME model)')  
 
     def add_base_train_parameters(self):
         base_params = self.parser.add_argument_group('base')
@@ -49,9 +52,6 @@ class ArgumentParser():
         # Dataset parameters
         dataset_params.add_argument('--dataset-csv-path', type=str, default='', help='path to training transformation csv folder')
         dataset_params.add_argument('--dataset-image-path', type=str, default='', help='path to folder containing training images')
-        dataset_params.add_argument('--input-height', type=int, default=1080, help='Height of input images (used in ME model)')        
-        dataset_params.add_argument('--input-width', type=int, default=1920, help='Width of input images (used in ME model)')  
-        dataset_params.add_argument('--crop-factor', type=float, default=0.2, help='Cropping after synthetic image warping (used in ME model)')  
         # Random synth dataset parameters
         dataset_params.add_argument('--four-point-hom', type=str_to_bool, nargs='?', const=True, default=True, help='use 4 pt parametrization for homography')
         dataset_params.add_argument('--random-sample', type=str_to_bool, nargs='?', const=True, default=True, help='sample random transformations')
