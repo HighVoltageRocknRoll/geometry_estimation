@@ -129,7 +129,7 @@ class SynthDatasetME(Dataset):
             self.train_data = self.train_data.iloc[0:dataset_size,:]
         self.img_names = self.train_data.iloc[:,0]
         if self.random_sample==False:
-            self.theta_array = self.train_data.iloc[:, 1:].values().astype('float')
+            self.theta_array = self.train_data.iloc[:, 1:].values.astype('float')
         else:
             self.me_handler = MEHandler(int(h-h*crop), int(w-w*crop), loss_metric='colorindependent', runs_to_warm_up=1)
             self.crop = crop
