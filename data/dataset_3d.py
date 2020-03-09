@@ -12,7 +12,7 @@ class Dataset3D(Dataset):
     
     """
     
-    Proposal Flow image pair dataset
+    3D image pair dataset
     
 
     Args:

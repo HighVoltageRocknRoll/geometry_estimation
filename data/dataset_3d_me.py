@@ -42,7 +42,6 @@ class Dataset3DME(Dataset):
             self.mv_names = self.pairs.iloc[:,0]
             self.affine_simple_values = self.pairs.iloc[:, 1:].values.astype('float')
         self.dataset_path = dataset_path         
-        self.transform = transform
 
     def __len__(self):
         return len(self.pairs)
