@@ -11,6 +11,7 @@ from data.pf_dataset import PFDataset, PFPascalDataset
 from data.caltech_dataset import CaltechDataset
 from data.tss_dataset import TSSDataset
 from data.dataset_3d import Dataset3D
+from data.dataset_3d_me import Dataset3DME
 from data.download_datasets import *
 from geotnf.point_tnf import *
 from geotnf.transformation import GeometricTnf
@@ -37,61 +38,31 @@ def main(passed_arguments=None):
     # check provided models and deduce if single/two-stage model should be used
     two_stage = args.model_2 != ''
      
-
-    if args.eval_dataset_path == '' and args.eval_dataset == 'pf':
-        args.eval_dataset_path = 'datasets/proposal-flow-willow/'
-
-    if args.eval_dataset_path == '' and args.eval_dataset == 'pf-pascal':
-        args.eval_dataset_path = 'datasets/proposal-flow-pascal/'
-
-    if args.eval_dataset_path == '' and args.eval_dataset == 'caltech':
-        args.eval_dataset_path = 'datasets/caltech-101/'
-        
-    if args.eval_dataset_path == '' and args.eval_dataset == 'tss':
-        args.eval_dataset_path = 'datasets/tss/'
-
     use_cuda = torch.cuda.is_available()
-
-    # Download dataset if needed
-    if args.eval_dataset == 'pf' and not exists(args.eval_dataset_path):
-        download_PF_willow(args.eval_dataset_path)
-
-    elif args.eval_dataset == 'pf-pascal' and not exists(args.eval_dataset_path):
-        download_PF_pascal(args.eval_dataset_path)
-
-    elif args.eval_dataset == 'caltech' and not exists(args.eval_dataset_path):
-        download_caltech(args.eval_dataset_path)
-
-    elif args.eval_dataset == 'tss' and not exists(args.eval_dataset_path):
-        download_TSS(args.eval_dataset_path)
-
+    use_me = args.use_me
 
     print('Creating CNN model...')
-
 
     def create_model(model_filename):
         checkpoint = torch.load(model_filename, map_location=lambda storage, loc: storage)
         checkpoint['state_dict'] = OrderedDict([(k.replace('vgg', 'model'), v) for k, v in checkpoint['state_dict'].items()])
         output_size = checkpoint['state_dict']['FeatureRegression.linear.bias'].size()[0]
 
-        if output_size == 6:
-            geometric_model = 'affine'
+        if output_size == 4:
+            geometric_model = 'affine_simple_4'
         elif output_size == 3:
             geometric_model = 'affine_simple'
-        elif output_size == 4:
-            geometric_model = 'affine_simple_4'
-        elif output_size == 8 or output_size == 9:
-            geometric_model = 'hom'
-        else: 
-            geometric_model = 'tps'
+        else:
+            raise NotImplementedError('Geometric model deducted from output layer is unsupported')
 
         model = CNNGeometric(use_cuda=use_cuda,
                              output_dim=output_size,
                              **arg_groups['model'])
 
-        for name, param in model.FeatureExtraction.state_dict().items():
-            if not name.endswith('num_batches_tracked'):
-                model.FeatureExtraction.state_dict()[name].copy_(checkpoint['state_dict']['FeatureExtraction.' + name])    
+        if use_me is False:
+            for name, param in model.FeatureExtraction.state_dict().items():
+                if not name.endswith('num_batches_tracked'):
+                    model.FeatureExtraction.state_dict()[name].copy_(checkpoint['state_dict']['FeatureExtraction.' + name])    
 
         for name, param in model.FeatureRegression.state_dict().items():
             if not name.endswith('num_batches_tracked'):
@@ -113,41 +84,25 @@ def main(passed_arguments=None):
     print('Creating dataset and dataloader...')
 
     # Dataset and dataloader
-    if args.eval_dataset == 'pf':  
-        Dataset = PFDataset
-        collate_fn = default_collate
-        csv_file = 'test_pairs_pf.csv'
-
-    elif args.eval_dataset == '3d':
-        Dataset = Dataset3D
-        collate_fn = default_collate
-        csv_file = 'all_pairs_3d.csv'
-
-    elif args.eval_dataset == 'pf-pascal':  
-        Dataset = PFPascalDataset
-        collate_fn = default_collate
-        csv_file = 'all_pairs_pf_pascal.csv'    
-
-    elif args.eval_dataset == 'caltech':
-        Dataset = CaltechDataset
-        collate_fn = default_collate
-        csv_file = 'test_pairs_caltech_with_category.csv'
-
-    elif args.eval_dataset == 'tss':
-        Dataset = TSSDataset
-        collate_fn = default_collate
-        csv_file = 'test_pairs_tss.csv'
-        
-    cnn_image_size=(args.image_size,args.image_size)
-
-    dataset = Dataset(csv_file = os.path.join(args.eval_dataset_path, csv_file),
+    if args.eval_dataset == '3d' and use_me is False:
+        cnn_image_size=(args.image_size,args.image_size)
+        dataset = Dataset3D(csv_file = os.path.join(args.eval_dataset_path, 'all_pairs.csv'),
                       dataset_path = args.eval_dataset_path,
                       transform = NormalizeImageDict(['source_image','target_image']),
                       output_size = cnn_image_size)
+        collate_fn = default_collate
+    elif args.eval_dataset == '3d' and use_me is True:
+        cnn_image_size=(args.input_height, args.input_width)
+        dataset = Dataset3DME(csv_file = os.path.join(args.eval_dataset_path, 'all_pairs_3d.csv'),
+                      dataset_path = args.eval_dataset_path,
+                      input_size = cnn_image_size,
+                      crop=args.crop)
+        collate_fn = default_collate
+    else:
+        raise NotImplementedError('Dataset is unsupported')
 
     if use_cuda:
         batch_size = args.batch_size
-
     else:
         batch_size = 1
 
@@ -159,14 +114,10 @@ def main(passed_arguments=None):
 
     batch_tnf = BatchTensorToVars(use_cuda = use_cuda)
 
-    if args.eval_dataset == 'pf' or args.eval_dataset == 'pf-pascal':  
-        metric = 'pck'
-    elif args.eval_dataset == '3d':
+    if args.eval_dataset == '3d':
         metric = 'absdiff'
-    elif args.eval_dataset == 'caltech':
-        metric = 'area'
-    elif args.eval_dataset == 'tss':
-        metric = 'flow'
+    else:
+        raise NotImplementedError('Dataset is unsupported')
         
     model_1.eval()
 

@@ -111,6 +111,9 @@ class ArgumentParser():
         eval_params.add_argument('--eval-metric', type=str, default='pck', help='pck/distance')
         eval_params.add_argument('--tps-reg-factor', type=float, default=0.0, help='regularisation factor for tps tnf')
         eval_params.add_argument('--batch-size', type=int, default=16, help='batch size (only GPU)')
+        eval_params.add_argument('--input-height', type=int, default=1080, help='Height of input images (used in ME model)')        
+        eval_params.add_argument('--input-width', type=int, default=1920, help='Width of input images (used in ME model)')  
+        eval_params.add_argument('--crop-factor', type=float, default=0.2, help='Cropping after synthetic image warping (used in ME model)')  
         
 
         

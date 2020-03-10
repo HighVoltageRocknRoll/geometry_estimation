@@ -103,20 +103,22 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
         model_1.eval()
         theta_1=None
         theta_2=None
+        if use_me:
+            theta_1 = model_1(batch)
+        else:
+            source_image = batch['source_image']
+            target_image = batch['target_image']
 
-        source_image = batch['source_image']
-        target_image = batch['target_image']
+            # compute iterative first stage       
+            theta_1,warped_image_1 = eval_model_multistage(model_1,geometric_model_1,args.num_of_iters,source_image,target_image)
 
-        # compute iterative first stage       
-        theta_1,warped_image_1 = eval_model_multistage(model_1,geometric_model_1,args.num_of_iters,source_image,target_image)
+            #import pdb;pdb.set_trace()
 
-        #import pdb;pdb.set_trace()
-
-        # compute single second stage
-        if two_stage:
-            model_2.eval()
-            theta_2 = model_2({'source_image':warped_image_1,'target_image':target_image})           
-    
+            # compute single second stage
+            if two_stage:
+                model_2.eval()
+                theta_2 = model_2({'source_image':warped_image_1,'target_image':target_image})           
+        
         if metric_fun is not None:
             stats = metric_fun(batch,batch_start_idx,theta_1,theta_2,geometric_model_1,geometric_model_2,stats,args)
             
@@ -157,16 +159,19 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
 def absdiff_metrics(batch,batch_start_idx,theta_1,theta_2,geometric_model_1,geometric_model_2,stats,args,use_cuda=True):
     affine_simple_values = batch['affine_simple_values']
     
-    current_batch_size=batch['source_im_size'].size(0)
+    current_batch_size=affine_simple_values.size(0)
     indices = range(batch_start_idx,batch_start_idx+current_batch_size)
 
-    stats[geometric_model_1]['rotate_diff'][indices] = np.abs((affine_simple_values[:, 0] - theta_1[:, 0]).cpu().detach().numpy())[..., None]
-    stats[geometric_model_1]['scale_diff'][indices] = np.abs((affine_simple_values[:, 1] - theta_1[:, 1]).cpu().detach().numpy())[..., None]
-    stats[geometric_model_1]['shift_diff'][indices] = np.abs((affine_simple_values[:, 2] - theta_1[:, 2]).cpu().detach().numpy())[..., None]
+    np_theta_GT = affine_simple_values.cpu().detach().numpy()
+    np_theta = theta_1.cpu().detach().numpy()
 
-    stats[geometric_model_1]['rotate_value'][indices] = theta_1[:, 0].cpu().detach().numpy()[..., None]
-    stats[geometric_model_1]['scale_value'][indices] = theta_1[:, 1].cpu().detach().numpy()[..., None]
-    stats[geometric_model_1]['shift_value'][indices] = theta_1[:, 2].cpu().detach().numpy()[..., None]
+    stats[geometric_model_1]['rotate_diff'][indices] = np.abs(np_theta_GT[:, 0] - np_theta[:, 0])[..., None]
+    stats[geometric_model_1]['scale_diff'][indices] = np.abs(np_theta_GT[:, 1] - np_theta[:, 1])[..., None]
+    stats[geometric_model_1]['shift_diff'][indices] = np.abs(np_theta_GT[:, 2] - np_theta[:, 2])[..., None]
+
+    stats[geometric_model_1]['rotate_value'][indices] = np_theta[:, 0][..., None]
+    stats[geometric_model_1]['scale_value'][indices] = np_theta[:, 1][..., None]
+    stats[geometric_model_1]['shift_value'][indices] = np_theta[:, 2][..., None]
         
     return stats
 
