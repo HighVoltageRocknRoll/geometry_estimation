@@ -103,7 +103,7 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
         model_1.eval()
         theta_1=None
         theta_2=None
-        if use_me:
+        if args.use_me:
             theta_1 = model_1(batch)
         else:
             source_image = batch['source_image']
