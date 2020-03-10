@@ -96,7 +96,7 @@ def main(passed_arguments=None):
         dataset = Dataset3DME(csv_file = os.path.join(args.eval_dataset_path, 'all_pairs_3d.csv'),
                       dataset_path = args.eval_dataset_path,
                       input_size = cnn_image_size,
-                      crop=args.crop)
+                      crop=args.crop_factor)
         collate_fn = default_collate
     else:
         raise NotImplementedError('Dataset is unsupported')
