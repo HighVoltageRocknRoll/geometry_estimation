@@ -23,7 +23,8 @@ class ArgumentParser():
         model_params.add_argument('--fr-channels', nargs='+', type=int, default=[225,128,64], help='channels in feat. reg. conv layers')
         model_params.add_argument('--matching-type', type=str, default='correlation', help='correlation/subtraction/concatenation')
         model_params.add_argument('--normalize-matches', type=str_to_bool, nargs='?', const=True, default=True, help='perform L2 normalization')   
-        model_params.add_argument('--use-me', type=str_to_bool, nargs='?', const=True, default=False, help='Use ME based model')    
+        model_params.add_argument('--batch-normalization', type=str_to_bool, nargs='?', const=True, default=True, help='use batch norm layers')   
+        model_params.add_argument('--use-me', type=str_to_bool, nargs='?', const=True, default=False, help='use ME based model')    
 
     def add_base_train_parameters(self):
         base_params = self.parser.add_argument_group('base')
@@ -71,10 +72,8 @@ class ArgumentParser():
         train_params.add_argument('--lr_max_iter', type=int, default=1000,
                         help='Number of steps between lr starting value and 1e-6 '
                              '(lr default min) when choosing lr_scheduler')
-        train_params.add_argument('--momentum', type=float, default=0.9, help='momentum constant')
         train_params.add_argument('--num-epochs', type=int, default=20, help='number of training epochs')
         train_params.add_argument('--batch-size', type=int, default=16, help='training batch size')
-        train_params.add_argument('--weight-decay', type=float, default=0, help='weight decay constant')
         train_params.add_argument('--seed', type=int, default=1, help='Pseudo-RNG seed')
         train_params.add_argument('--use-mse-loss', type=str_to_bool, nargs='?', const=True, default=False, help='Use MSE loss on tnf. parameters')        
         train_params.add_argument('--geometric-model', type=str, default='affine', help='affine/hom/tps')
@@ -82,18 +81,7 @@ class ArgumentParser():
         train_params.add_argument('--trained-model-fn', type=str, default='checkpoint_adam', help='trained model filename')
         train_params.add_argument('--trained-model-dir', type=str, default='trained_models', help='path to trained models folder')
         # Dataset name (used for loading defaults)
-        train_params.add_argument('--training-dataset', type=str, default='pascal', help='dataset to use for training')
-        # Limit train/test dataset sizes
-        train_params.add_argument('--train-dataset-size', type=int, default=0, help='train dataset size limit')
-        train_params.add_argument('--test-dataset-size', type=int, default=0, help='test dataset size limit')
-        # Parts of model to train
-        train_params.add_argument('--train-fe', type=str_to_bool, nargs='?', const=True, default=True, help='Train feature extraction')
-        train_params.add_argument('--train-fr', type=str_to_bool, nargs='?', const=True, default=True, help='Train feature regressor')
-        train_params.add_argument('--train-bn', type=str_to_bool, nargs='?', const=True, default=True, help='train batch-norm layers')
-        train_params.add_argument('--fe-finetune-params',  nargs='+', type=str, default=[''], help='String indicating the F.Ext params to finetune')
-        train_params.add_argument('--update-bn-buffers', type=str_to_bool, nargs='?', const=True, default=False, help='Update batch norm running mean and std')        
-        # Train with occlusion
-        train_params.add_argument('--occlusion-factor', type=float, default=0, help='occlusion factor for training')
+        train_params.add_argument('--training-dataset', type=str, default='3d', help='dataset to use for training')
         # log parameters
         train_params.add_argument('--log_interval', type=int, default=100,
                         help='Number of iterations between logs')
@@ -104,11 +92,10 @@ class ArgumentParser():
     def add_eval_parameters(self):
         eval_params = self.parser.add_argument_group('eval')
         # Evaluation parameters
-        eval_params.add_argument('--eval-dataset', type=str, default='pf', help='pf/caltech/tss')
-        eval_params.add_argument('--eval-dataset-path', type=str, default='', help='Path to PF dataset')
+        eval_params.add_argument('--eval-dataset', type=str, default='3d', help='Only 3D dataset is available for now')
+        eval_params.add_argument('--eval-dataset-path', type=str, default='', help='Path to dataset')
         eval_params.add_argument('--flow-output-dir', type=str, default='results/', help='flow output dir')
         eval_params.add_argument('--pck-alpha', type=float, default=0.1, help='pck margin factor alpha')
-        eval_params.add_argument('--eval-metric', type=str, default='pck', help='pck/distance')
         eval_params.add_argument('--tps-reg-factor', type=float, default=0.0, help='regularisation factor for tps tnf')
         eval_params.add_argument('--batch-size', type=int, default=16, help='batch size (only GPU)')
         eval_params.add_argument('--input-height', type=int, default=1080, help='Height of input images (used in ME model)')        
