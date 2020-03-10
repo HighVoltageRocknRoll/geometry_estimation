@@ -160,9 +160,20 @@ class BasicBlock(nn.Module):
         self.block = nn.Sequential(*layers)
         self.relu = nn.ReLU(inplace=True)
 
+        if inplanes != planes:
+            downsample_layers = []
+            downsample_layers.append(nn.Conv2d(inplanes, planes, kernel_size=1))
+            if batch_normalization:
+                downsample_layers.append(nn.BatchNorm2d(planes))
+            self.downsample = nn.Sequential(*downsample_layers)
+        else:
+            self.downsample = None
+
     def forward(self, x):
         identity = x
         out = self.block(x)
+        if self.downsample is not None:
+            identity = self.downsample(identity)
         out += identity
         out = self.relu(out)
         return out
