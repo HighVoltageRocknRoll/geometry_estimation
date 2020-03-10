@@ -142,29 +142,46 @@ class FeatureRegression(nn.Module):
         x = self.linear(x)
         return x
 
+class BasicBlock(nn.Module):
+    def __init__(self, inplanes, planes, batch_normalization=True):
+        super(BasicBlock, self).__init__()
+        
+        layers = []
+
+        layers.append(nn.Conv2d(inplanes, planes, kernel_size=3, padding=1))
+        if batch_normalization:
+            layers.append(nn.BatchNorm2d(planes))
+        layers.append(nn.ReLU(inplace=True))
+
+        layers.append(nn.Conv2d(planes, planes, kernel_size=3, padding=1))
+        if batch_normalization:
+            layers.append(nn.BatchNorm2d(planes))
+
+        self.block = nn.Sequential(*layers)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        identity = x
+        out = self.block(x)
+        out += identity
+        out = self.relu(out)
+        return out
+
 class MERegression(nn.Module):
-    def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[4,64,128,128,64]):
+    def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[4,32,32,64,64,128]):
         super(MERegression, self).__init__()
-        nn_modules = list()
-        input_size = np.array([216,384], dtype=int)
-        k_size = 3
-        conv_sub = k_size-1
+        nn_modules = []
+
         num_blocks = len(channels) - 1
+        input_size = np.array([216,384], dtype=int)
+
         for i in range(num_blocks):
-            ch_in = channels[i]
-            ch_out = channels[i+1]            
-            nn_modules.append(nn.Conv2d(ch_in, ch_out, kernel_size=k_size, padding=0))
-            input_size -= conv_sub
-            nn_modules.append(nn.Conv2d(ch_out, ch_out, kernel_size=k_size, padding=0))
-            input_size -= conv_sub
-            if batch_normalization:
-                nn_modules.append(nn.BatchNorm2d(ch_out))
-            nn_modules.append(nn.ReLU(inplace=True))
+            nn_modules.append(BasicBlock(channels[i], channels[i+1], batch_normalization=batch_normalization))
             nn_modules.append(nn.MaxPool2d(kernel_size=2))
             input_size //= 2
         self.conv = nn.Sequential(*nn_modules)    
 
-        self.linear = nn.Linear(ch_out * input_size[0] * input_size[1], output_dim)
+        self.linear = nn.Linear(channels[-1] * input_size[0] * input_size[1], output_dim)
         if use_cuda:
             self.conv.cuda()
             self.linear.cuda()
@@ -180,26 +197,17 @@ class CNNGeometric(nn.Module):
     def __init__(self, output_dim=6, 
                  feature_extraction_cnn='vgg', 
                  feature_extraction_last_layer='',
-                 return_correlation=False,  
                  fr_kernel_sizes=[7,5,5],
                  fr_channels=[225,128,64],
-                 feature_self_matching=False,
-                 normalize_features=True,
                  normalize_matches=True, 
                  use_me=False,
                  batch_normalization=True, 
-                 train_fe=False,
                  use_cuda=True,
                  matching_type='correlation'):
-#                 regressor_channels_1 = 128,
-#                 regressor_channels_2 = 64):
         
         super(CNNGeometric, self).__init__()
         self.use_cuda = use_cuda
-        self.feature_self_matching = feature_self_matching
-        self.normalize_features = normalize_features
         self.normalize_matches = normalize_matches
-        self.return_correlation = return_correlation
         self.use_me = use_me
         if self.use_me:
             self.FeatureRegression = MERegression(output_dim,
@@ -207,10 +215,10 @@ class CNNGeometric(nn.Module):
                                              channels=fr_channels,
                                              batch_normalization=batch_normalization)
         else:    
-            self.FeatureExtraction = FeatureExtraction(train_fe=train_fe,
+            self.FeatureExtraction = FeatureExtraction(train_fe=False,
                                                     feature_extraction_cnn=feature_extraction_cnn,
                                                     last_layer=feature_extraction_last_layer,
-                                                    normalization=normalize_features,
+                                                    normalization=True,
                                                     use_cuda=self.use_cuda)
             
             self.FeatureCorrelation = FeatureCorrelation(shape='3D',normalization=normalize_matches,matching_type=matching_type)        
@@ -241,7 +249,4 @@ class CNNGeometric(nn.Module):
             # regression to tnf parameters theta
             theta = self.FeatureRegression(correlation)
             
-            if self.return_correlation:
-                return (theta,correlation)
-            else:
-                return theta
+            return theta

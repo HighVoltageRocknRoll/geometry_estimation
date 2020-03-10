@@ -82,16 +82,11 @@ class SynthDatasetME(Dataset):
                  h, w,
                  crop,
                  geometric_model='affine_simple_4', 
-                 dataset_size=0, 
                  random_sample=True):
     
         # read csv file
         self.train_data = pd.read_csv(os.path.join(dataset_csv_path,dataset_csv_file))
         self.random_sample = random_sample
-        self.dataset_size = dataset_size
-        if dataset_size!=0:
-            dataset_size = min((dataset_size,len(self.train_data)))
-            self.train_data = self.train_data.iloc[0:dataset_size,:]
         self.img_names = self.train_data.iloc[:,0]
         if self.random_sample==False:
             self.theta_array = self.train_data.iloc[:, 1:].values.astype('float')
