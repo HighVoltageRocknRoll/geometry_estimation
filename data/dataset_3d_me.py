@@ -24,9 +24,10 @@ class Dataset3DME(Dataset):
         
     """
 
-    def __init__(self, csv_file, dataset_path, input_size=(1080,1920), crop=0.2):
+    def __init__(self, csv_file, dataset_path, input_size=(1080,1920), crop=0.2, use_conf=False):
 
         self.h, self.w = input_size
+        self.use_conf = use_conf
         self.pairs = pd.read_csv(csv_file)
         if self.pairs.iloc[0,0].endswith('.npy') or self.pairs.iloc[0,0].endswith('.npz'):
             self.calculate_me = False
@@ -48,6 +49,8 @@ class Dataset3DME(Dataset):
 
     def __getitem__(self, idx):
         if self.calculate_me:
+            if self.use_conf:
+                raise NotImplementedError('Confidence calculating in model has not implemented yet')
             # read images
             image_L = io.imread(os.path.join(self.dataset_path, self.img_L_names[idx]))
             image_R = io.imread(os.path.join(self.dataset_path, self.img_R_names[idx]))
@@ -60,11 +63,19 @@ class Dataset3DME(Dataset):
             reader = np.load(os.path.join(self.dataset_path, self.mv_names[idx]))
             mv_L2R = reader['l2r']
             mv_R2L = reader['r2l']
+            if self.use_conf:
+                conf = reader['conf']
+                if conf.ndim == 2:
+                    conf = conf[None, ...]
 
         mv_L2R = torch.Tensor(mv_L2R.astype(np.float32))
         mv_R2L = torch.Tensor(mv_R2L.astype(np.float32))
         affine_simple_values = torch.Tensor(self.affine_simple_values[idx, :].astype(np.float32))
         
         sample = {'mv_L2R': mv_L2R, 'mv_R2L': mv_R2L, 'affine_simple_values': affine_simple_values}
+
+        if self.use_conf:
+            conf = torch.Tensor(conf.astype(np.float32))
+            sample['confidence'] = conf
         
         return sample

@@ -81,12 +81,14 @@ class SynthDatasetME(Dataset):
                  dataset_image_path, 
                  h, w,
                  crop,
+                 use_conf,
                  geometric_model='affine_simple_4', 
                  random_sample=True):
     
         # read csv file
         self.train_data = pd.read_csv(os.path.join(dataset_csv_path,dataset_csv_file))
         self.random_sample = random_sample
+        self.use_conf = use_conf
         self.img_names = self.train_data.iloc[:,0]
         if self.random_sample==False:
             self.theta_array = self.train_data.iloc[:, 1:].values.astype('float')
@@ -102,6 +104,8 @@ class SynthDatasetME(Dataset):
 
     def __getitem__(self, idx):
         if self.random_sample:
+            if self.use_conf:
+                raise NotImplementedError('Calculating confidence in synth dataset has not implemented yet')
             # read image
             img_name = os.path.join(self.dataset_image_path, self.img_names[idx])
             image_L = io.imread(img_name)
@@ -123,6 +127,10 @@ class SynthDatasetME(Dataset):
             reader = np.load(os.path.join(self.dataset_image_path, self.img_names[idx]))
             mv_L2R = reader['l2r']
             mv_R2L = reader['r2l']
+            if self.use_conf:
+                conf = reader['conf']
+                if conf.ndim == 2:
+                    conf = conf[None, ...]
             theta = self.theta_array[idx, :]
 
         # make arrays float tensor for subsequent processing
@@ -132,4 +140,8 @@ class SynthDatasetME(Dataset):
 
         sample = {'mv_L2R': mv_L2R, 'mv_R2L': mv_R2L, 'theta_GT': theta}
         
+        if self.use_conf:
+            conf = torch.Tensor(conf.astype(np.float32))
+            sample['confidence'] = conf
+
         return sample

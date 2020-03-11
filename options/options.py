@@ -6,6 +6,7 @@ class ArgumentParser():
         self.parser = argparse.ArgumentParser(description='CNNGeometric PyTorch implementation')
         
         self.add_cnn_model_parameters()
+        self.add_ME_parameters()
         if mode=='train':
             self.add_train_parameters()
             self.add_synth_dataset_parameters()
@@ -24,8 +25,8 @@ class ArgumentParser():
         model_params.add_argument('--matching-type', type=str, default='correlation', help='correlation/subtraction/concatenation')
         model_params.add_argument('--normalize-matches', type=str_to_bool, nargs='?', const=True, default=True, help='perform L2 normalization')   
         model_params.add_argument('--batch-normalization', type=str_to_bool, nargs='?', const=True, default=True, help='use batch norm layers')   
-        model_params.add_argument('--use-me', type=str_to_bool, nargs='?', const=True, default=False, help='use ME based model')    
-
+        model_params.add_argument('--use-me', type=str_to_bool, nargs='?', const=True, default=False, help='use ME based model')   
+         
     def add_base_train_parameters(self):
         base_params = self.parser.add_argument_group('base')
         # Image size
@@ -45,14 +46,21 @@ class ArgumentParser():
         # Number of stages
         base_params.add_argument('--num-of-iters', type=int, default=1, help='number of stages to use recursively')
     
+    def add_ME_parameters(self):
+        me_params = self.parser.add_argument_group('ME')
+        # Image size
+        me_params.add_argument('--input-height', type=int, default=1080, help='Height of input images')        
+        me_params.add_argument('--input-width', type=int, default=1920, help='Width of input images')  
+        # Crop after warping
+        me_params.add_argument('--crop-factor', type=float, default=0.2, help='Cropping after synthetic image warping')
+        # Motion Vectors confidence
+        me_params.add_argument('--use-conf', type=str_to_bool, nargs='?', const=True, default=False, help='add confidence to Motion Vectors')  
+
     def add_synth_dataset_parameters(self):
         dataset_params = self.parser.add_argument_group('dataset')
         # Dataset parameters
         dataset_params.add_argument('--dataset-csv-path', type=str, default='', help='path to training transformation csv folder')
         dataset_params.add_argument('--dataset-image-path', type=str, default='', help='path to folder containing training images')
-        dataset_params.add_argument('--input-height', type=int, default=1080, help='Height of input images (used in ME model)')        
-        dataset_params.add_argument('--input-width', type=int, default=1920, help='Width of input images (used in ME model)')  
-        dataset_params.add_argument('--crop-factor', type=float, default=0.2, help='Cropping after synthetic image warping (used in ME model)')  
         # Random synth dataset parameters
         dataset_params.add_argument('--four-point-hom', type=str_to_bool, nargs='?', const=True, default=True, help='use 4 pt parametrization for homography')
         dataset_params.add_argument('--random-sample', type=str_to_bool, nargs='?', const=True, default=True, help='sample random transformations')
@@ -97,13 +105,9 @@ class ArgumentParser():
         eval_params.add_argument('--flow-output-dir', type=str, default='results/', help='flow output dir')
         eval_params.add_argument('--pck-alpha', type=float, default=0.1, help='pck margin factor alpha')
         eval_params.add_argument('--tps-reg-factor', type=float, default=0.0, help='regularisation factor for tps tnf')
-        eval_params.add_argument('--batch-size', type=int, default=16, help='batch size (only GPU)')
-        eval_params.add_argument('--input-height', type=int, default=1080, help='Height of input images (used in ME model)')        
-        eval_params.add_argument('--input-width', type=int, default=1920, help='Width of input images (used in ME model)')  
-        eval_params.add_argument('--crop-factor', type=float, default=0.2, help='Cropping after synthetic image warping (used in ME model)')  
-        
+        eval_params.add_argument('--batch-size', type=int, default=16, help='batch size (only GPU)') 
 
-        
+
     def parse(self,arg_str=None):
         if arg_str is None:
             args = self.parser.parse_args()
