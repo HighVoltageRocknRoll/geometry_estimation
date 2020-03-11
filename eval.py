@@ -56,6 +56,7 @@ def main(passed_arguments=None):
             raise NotImplementedError('Geometric model deducted from output layer is unsupported')
 
         model = CNNGeometric(use_cuda=use_cuda,
+                             use_conf=args.use_conf
                              output_dim=output_size,
                              **arg_groups['model'])
 

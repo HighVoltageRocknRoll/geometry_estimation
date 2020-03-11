@@ -56,6 +56,7 @@ def main():
         raise NotImplementedError('Specified geometric model is unsupported')
 
     model = CNNGeometric(use_cuda=use_cuda,
+                         use_conf=args.use_conf 
                          output_dim=cnn_output_dim,
                          **arg_groups['model'])
 
