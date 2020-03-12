@@ -29,8 +29,8 @@ class Dataset3DME(Dataset):
         self.h, self.w = input_size
         self.use_conf = use_conf
         self.pairs = pd.read_csv(csv_file)
-        h_cropped = self.h - self.h*crop
-        w_cropped = self.w - self.w*crop
+        h_cropped = int(self.h - self.h*crop)
+        w_cropped = int(self.w - self.w*crop)
         if self.pairs.iloc[0,0].endswith('.npy') or self.pairs.iloc[0,0].endswith('.npz'):
             self.calculate_me = False
         else:

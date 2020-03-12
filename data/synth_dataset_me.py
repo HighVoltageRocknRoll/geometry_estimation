@@ -90,8 +90,8 @@ class SynthDatasetME(Dataset):
         self.random_sample = random_sample
         self.use_conf = use_conf
         self.img_names = self.train_data.iloc[:,0]
-        h_cropped = h - h*crop
-        w_cropped = w - w*crop
+        h_cropped = int(h - h*crop)
+        w_cropped = int(w - w*crop)
         if self.random_sample==False:
             self.theta_array = self.train_data.iloc[:, 1:].values.astype('float')
         else:
