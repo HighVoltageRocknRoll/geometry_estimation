@@ -131,7 +131,7 @@ def main():
     if args.lr_scheduler:
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
                                                                T_max=args.lr_max_iter,
-                                                               eta_min=1e-6)
+                                                               eta_min=1e-7)
     else:
         scheduler = False
 
