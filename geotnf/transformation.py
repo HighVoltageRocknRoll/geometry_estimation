@@ -552,8 +552,8 @@ def affine_mat_from_simple(theta):
         raise ValueError("Calling affine mat simple constructing from theta size %s" % theta.size().__str__())
     
     # All elements should have shape of (batch_size) for correct torch.stack
-    cos_alpha = torch.cos(theta[:, 0]) * theta[:, 1]
-    sin_alpha = torch.sin(theta[:, 0]) * theta[:, 1]
+    cos_alpha = torch.cos(theta[:, 0] / 180.0 * np.pi) * theta[:, 1]
+    sin_alpha = torch.sin(theta[:, 0] / 180.0 * np.pi) * theta[:, 1]
     ty = theta[:, 2]
         
     A = torch.stack((cos_alpha, -sin_alpha, tx, sin_alpha, cos_alpha, ty), 1)
