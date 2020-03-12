@@ -29,6 +29,8 @@ class Dataset3DME(Dataset):
         self.h, self.w = input_size
         self.use_conf = use_conf
         self.pairs = pd.read_csv(csv_file)
+        h_cropped = self.h - self.h*crop
+        w_cropped = self.w - self.w*crop
         if self.pairs.iloc[0,0].endswith('.npy') or self.pairs.iloc[0,0].endswith('.npz'):
             self.calculate_me = False
         else:
@@ -37,12 +39,13 @@ class Dataset3DME(Dataset):
             self.img_L_names = self.pairs.iloc[:,0]
             self.img_R_names = self.pairs.iloc[:,1]
             self.affine_simple_values = self.pairs.iloc[:, 2:].values.astype('float')
-            self.me_handler = MEHandler(int(self.h-self.h*crop), int(self.w-self.w*crop), loss_metric='colorindependent', runs_to_warm_up=1)
+            self.me_handler = MEHandler(h_cropped, w_cropped, loss_metric='colorindependent', runs_to_warm_up=1)
             self.crop = crop
         else:
             self.mv_names = self.pairs.iloc[:,0]
             self.affine_simple_values = self.pairs.iloc[:, 1:].values.astype('float')
         self.dataset_path = dataset_path         
+        self.grid = np.stack(np.indices((h_cropped, w_cropped), dtype=np.float32)[::-1], axis=0)
 
     def __len__(self):
         return len(self.pairs)
@@ -70,9 +73,10 @@ class Dataset3DME(Dataset):
 
         mv_L2R = torch.Tensor(mv_L2R.astype(np.float32))
         mv_R2L = torch.Tensor(mv_R2L.astype(np.float32))
+        grid = torch.Tensor(self.grid)
         affine_simple_values = torch.Tensor(self.affine_simple_values[idx, :].astype(np.float32))
         
-        sample = {'mv_L2R': mv_L2R, 'mv_R2L': mv_R2L, 'affine_simple_values': affine_simple_values}
+        sample = {'mv_L2R': mv_L2R, 'mv_R2L': mv_R2L, 'grid': grid, 'affine_simple_values': affine_simple_values}
 
         if self.use_conf:
             conf = torch.Tensor(conf.astype(np.float32))

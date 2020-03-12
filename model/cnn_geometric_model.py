@@ -213,6 +213,8 @@ class CNNGeometric(nn.Module):
                  normalize_matches=True, 
                  use_me=False,
                  use_conf=False,
+                 grid_input=False,
+                 right_disp_input=False,
                  batch_normalization=True, 
                  use_cuda=True,
                  matching_type='correlation'):
@@ -222,6 +224,8 @@ class CNNGeometric(nn.Module):
         self.normalize_matches = normalize_matches
         self.use_me = use_me
         self.use_conf = use_conf
+        self.grid_input = grid_input
+        self.right_disp_input = right_disp_input
         if self.use_me:
             self.FeatureRegression = MERegression(output_dim,
                                              use_cuda=self.use_cuda,
@@ -248,12 +252,15 @@ class CNNGeometric(nn.Module):
     def forward(self, tnf_batch):
         if self.use_me:
             mv_L2R = tnf_batch['mv_L2R']
-            mv_R2L = tnf_batch['mv_R2L']
+            model_input = [mv_L2R]
+            if self.right_disp_input:
+                model_input.append(tnf_batch['mv_R2L'])
+            if self.grid_input:
+                model_input.append(tnf_batch['grid'])
             if self.use_conf:
-                conf = tnf_batch['confidence']
-                mv_concat = torch.cat((mv_L2R, -mv_R2L, conf), dim=1)
-            else:
-                mv_concat = torch.cat((mv_L2R, -mv_R2L), dim=1)
+                model_input.append(tnf_batch['confidence'])
+            
+            mv_concat = torch.cat(model_input, dim=1)
             theta = self.FeatureRegression(mv_concat)
             return theta
             

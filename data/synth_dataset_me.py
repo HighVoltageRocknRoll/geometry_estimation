@@ -90,11 +90,15 @@ class SynthDatasetME(Dataset):
         self.random_sample = random_sample
         self.use_conf = use_conf
         self.img_names = self.train_data.iloc[:,0]
+        h_cropped = h - h*crop
+        w_cropped = w - w*crop
         if self.random_sample==False:
             self.theta_array = self.train_data.iloc[:, 1:].values.astype('float')
         else:
-            self.me_handler = MEHandler(int(h-h*crop), int(w-w*crop), loss_metric='colorindependent', runs_to_warm_up=1)
+            self.me_handler = MEHandler(h_cropped, w_cropped, loss_metric='colorindependent', runs_to_warm_up=1)
             self.crop = crop
+        
+        self.grid = np.stack(np.indices((h_cropped, w_cropped), dtype=np.float32)[::-1], axis=0)
         # copy arguments
         self.dataset_image_path = dataset_image_path
         self.geometric_model = geometric_model
@@ -136,9 +140,10 @@ class SynthDatasetME(Dataset):
         # make arrays float tensor for subsequent processing
         mv_L2R = torch.Tensor(mv_L2R.astype(np.float32))
         mv_R2L = torch.Tensor(mv_R2L.astype(np.float32))
+        grid = torch.Tensor(self.grid)
         theta = torch.Tensor(theta.astype(np.float32))
 
-        sample = {'mv_L2R': mv_L2R, 'mv_R2L': mv_R2L, 'theta_GT': theta}
+        sample = {'mv_L2R': mv_L2R, 'mv_R2L': mv_R2L, 'grid': grid, 'theta_GT': theta}
         
         if self.use_conf:
             conf = torch.Tensor(conf.astype(np.float32))

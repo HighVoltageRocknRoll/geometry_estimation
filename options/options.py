@@ -26,6 +26,9 @@ class ArgumentParser():
         model_params.add_argument('--normalize-matches', type=str_to_bool, nargs='?', const=True, default=True, help='perform L2 normalization')   
         model_params.add_argument('--batch-normalization', type=str_to_bool, nargs='?', const=True, default=True, help='use batch norm layers')   
         model_params.add_argument('--use-me', type=str_to_bool, nargs='?', const=True, default=False, help='use ME based model')   
+        model_params.add_argument('--use-conf', type=str_to_bool, nargs='?', const=True, default=False, help='add confidence to Motion Vectors')  
+        model_params.add_argument('--grid-input', type=str_to_bool, nargs='?', const=True, default=False, help='pass grid coordinates as input channel')  
+        model_params.add_argument('--right-disp-input', type=str_to_bool, nargs='?', const=True, default=False, help='pass grid coordinates as input channel')  
          
     def add_base_train_parameters(self):
         base_params = self.parser.add_argument_group('base')
@@ -54,7 +57,7 @@ class ArgumentParser():
         # Crop after warping
         me_params.add_argument('--crop-factor', type=float, default=0.2, help='Cropping after synthetic image warping')
         # Motion Vectors confidence
-        me_params.add_argument('--use-conf', type=str_to_bool, nargs='?', const=True, default=False, help='add confidence to Motion Vectors')  
+        
 
     def add_synth_dataset_parameters(self):
         dataset_params = self.parser.add_argument_group('dataset')
