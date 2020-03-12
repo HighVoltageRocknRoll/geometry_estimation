@@ -98,7 +98,7 @@ class SynthDatasetME(Dataset):
             self.me_handler = MEHandler(h_cropped, w_cropped, loss_metric='colorindependent', runs_to_warm_up=1)
             self.crop = crop
         
-        self.grid = np.stack(np.indices((h_cropped, w_cropped), dtype=np.float32)[::-1], axis=0)
+        self.grid = np.stack(np.indices((h_cropped, w_cropped), dtype=np.float32)[::-1], axis=0)[..., ::4, ::4]
         # copy arguments
         self.dataset_image_path = dataset_image_path
         self.geometric_model = geometric_model
