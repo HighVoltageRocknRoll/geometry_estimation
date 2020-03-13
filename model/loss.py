@@ -45,3 +45,15 @@ class TransformedGridLoss(nn.Module):
         loss = torch.sum(torch.pow(P_prime - P_prime_GT,2),1)
         loss = torch.mean(loss)
         return loss
+
+
+class MixedLoss(nn.Module):
+    def __init__(self, alpha=0.01, geometric_model='affine', use_cuda=True, grid_size=20):
+        super(MixedLoss, self).__init__()
+        self.mse = nn.MSELoss()
+        self.grid = TransformedGridLoss(geometric_model=geometric_model, use_cuda=use_cuda, grid_size=grid_size)
+        self.alpha = alpha
+
+    def forward(self, theta, theta_GT):
+        loss = self.alpha * self.mse(theta, theta_GT) + self.grid(theta, theta_GT)
+        return loss

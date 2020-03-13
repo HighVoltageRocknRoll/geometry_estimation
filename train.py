@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from model.cnn_geometric_model import CNNGeometric
-from model.loss import TransformedGridLoss
+from model.loss import TransformedGridLoss, MixedLoss
 
 from data.synth_dataset import SynthDataset
 from data.synth_dataset_me import SynthDatasetME
@@ -67,7 +67,13 @@ def main():
         init_theta = torch.tensor([0, 1, 0, 0], device = device)
         model.FeatureRegression.linear.bias.data += init_theta
 
-    if args.use_mse_loss:
+    if args.use_mixed_loss:
+        print('Using grid+MSE loss...')
+        loss = MixedLoss(alpha=0.01,
+                         use_cuda=use_cuda, 
+                         geometric_model=args.geometric_model, 
+                         grid_size=100)
+    elif args.use_mse_loss:
         print('Using MSE loss...')
         loss = nn.MSELoss()
     else:
@@ -138,7 +144,12 @@ def main():
     # Train
 
     # Set up names for checkpoints
-    if args.use_mse_loss:
+    if args.use_mixed_loss:
+        ckpt = args.trained_model_fn + '_' + args.geometric_model + '_mixed_loss' + args.feature_extraction_cnn
+        checkpoint_path = os.path.join(args.trained_model_dir,
+                                       args.trained_model_fn,
+                                       ckpt + '.pth.tar')
+    elif args.use_mse_loss:
         ckpt = args.trained_model_fn + '_' + args.geometric_model + '_mse_loss' + args.feature_extraction_cnn
         checkpoint_path = os.path.join(args.trained_model_dir,
                                        args.trained_model_fn,

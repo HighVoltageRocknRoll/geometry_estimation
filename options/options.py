@@ -87,6 +87,7 @@ class ArgumentParser():
         train_params.add_argument('--batch-size', type=int, default=16, help='training batch size')
         train_params.add_argument('--seed', type=int, default=1, help='Pseudo-RNG seed')
         train_params.add_argument('--use-mse-loss', type=str_to_bool, nargs='?', const=True, default=False, help='Use MSE loss on tnf. parameters')        
+        train_params.add_argument('--use-mixed-loss', type=str_to_bool, nargs='?', const=True, default=False, help='Use MSE+grid loss on tnf. parameters')     
         train_params.add_argument('--geometric-model', type=str, default='affine', help='affine/hom/tps')
         # Trained model parameters
         train_params.add_argument('--trained-model-fn', type=str, default='checkpoint_adam', help='trained model filename')
