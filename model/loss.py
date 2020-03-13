@@ -53,7 +53,9 @@ class MixedLoss(nn.Module):
         self.mse = nn.MSELoss()
         self.grid = TransformedGridLoss(geometric_model=geometric_model, use_cuda=use_cuda, grid_size=grid_size)
         self.alpha = alpha
+        self.mse_weight = Variable(torch.FloatTensor([1.0, 100.0, 10.0]),requires_grad=False)
 
     def forward(self, theta, theta_GT):
-        loss = self.alpha * self.mse(theta, theta_GT) + self.grid(theta, theta_GT)
+
+        loss = self.alpha * self.mse(theta * self.mse_weight, theta_GT * self.mse_weight) + self.grid(theta, theta_GT)
         return loss

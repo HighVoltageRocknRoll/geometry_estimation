@@ -72,7 +72,7 @@ def main():
         loss = MixedLoss(alpha=0.01,
                          use_cuda=use_cuda, 
                          geometric_model=args.geometric_model, 
-                         grid_size=100)
+                         grid_size=200)
     elif args.use_mse_loss:
         print('Using MSE loss...')
         loss = nn.MSELoss()
