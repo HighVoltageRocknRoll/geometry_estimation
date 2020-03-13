@@ -55,7 +55,7 @@ class MixedLoss(nn.Module):
         self.alpha = alpha
         self.mse_weight = Variable(torch.FloatTensor([1.0, 100.0, 10.0]),requires_grad=False)
         if use_cuda:
-            self.mse_weight.cuda()
+            self.mse_weight = self.mse_weight.cuda()
 
     def forward(self, theta, theta_GT):
 
