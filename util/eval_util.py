@@ -131,8 +131,8 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
             for metric in metrics:
                 results=stats[key][metric]
                 print('Total: '+str(results.size))
-                print(metric+' mean:','{:.2}'.format(np.mean(results)))
-                print(metric+' median:','{:.2}'.format(np.median(results)))
+                print(metric+' mean:','{:.4}'.format(np.mean(results)))
+                print(metric+' median:','{:.4}'.format(np.median(results)))
                     
             print('\n')
     else:

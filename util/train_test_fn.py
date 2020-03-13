@@ -56,7 +56,7 @@ def train(epoch, model, loss_fn, optimizer,
                                      (epoch - 1) * len(dataloader) + batch_idx)
 
     train_loss /= len(dataloader)
-    print('Train set: Average loss: {:.4f}'.format(train_loss))
+    print('Train set: Average loss: {:.8f}'.format(train_loss))
     return train_loss
 
 
@@ -79,7 +79,7 @@ def validate_model(model, loss_fn,
         val_loss += loss.data.cpu().numpy().item()
 
     val_loss /= len(dataloader)
-    print('Validation set: Average loss: {:.4f}'.format(val_loss))
+    print('Validation set: Average loss: {:.8f}'.format(val_loss))
     if tb_writer:
         tb_writer.add_scalar('val loss',
                              val_loss,
