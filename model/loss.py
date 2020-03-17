@@ -48,16 +48,16 @@ class TransformedGridLoss(nn.Module):
 
 
 class MixedLoss(nn.Module):
-    def __init__(self, alpha=0.01, geometric_model='affine', use_cuda=True, grid_size=20):
+    def __init__(self, alpha=1000, geometric_model='affine', use_cuda=True, grid_size=20):
         super(MixedLoss, self).__init__()
         self.mse = nn.MSELoss()
         self.grid = TransformedGridLoss(geometric_model=geometric_model, use_cuda=use_cuda, grid_size=grid_size)
         self.alpha = alpha
-        self.mse_weight = Variable(torch.FloatTensor([1.0, 100.0, 10.0]),requires_grad=False)
+        self.mse_weight = Variable(torch.FloatTensor([1.0, 40.0, 10.0]),requires_grad=False)
         if use_cuda:
             self.mse_weight = self.mse_weight.cuda()
 
     def forward(self, theta, theta_GT):
 
-        loss = self.alpha * self.mse(theta * self.mse_weight, theta_GT * self.mse_weight) + self.grid(theta, theta_GT)
+        loss = self.mse(theta * self.mse_weight, theta_GT * self.mse_weight) + self.alpha * self.grid(theta, theta_GT)
         return loss

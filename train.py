@@ -60,16 +60,16 @@ def main():
                          **arg_groups['model'])
 
     if args.geometric_model == 'affine_simple':
-        init_theta = torch.tensor([0, 1, 0], device = device)
+        init_theta = torch.tensor([0.0, 1.0, 0.0], device = device)
         model.FeatureRegression.linear.bias.data += init_theta
     
     elif args.geometric_model == 'affine_simple_4':
-        init_theta = torch.tensor([0, 1, 0, 0], device = device)
+        init_theta = torch.tensor([0.0, 1.0, 0.0, 0.0], device = device)
         model.FeatureRegression.linear.bias.data += init_theta
 
     if args.use_mixed_loss:
         print('Using grid+MSE loss...')
-        loss = MixedLoss(alpha=0.1,
+        loss = MixedLoss(alpha=1000,
                          use_cuda=use_cuda, 
                          geometric_model=args.geometric_model, 
                          grid_size=400)
