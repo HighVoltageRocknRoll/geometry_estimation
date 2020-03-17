@@ -92,7 +92,7 @@ def main():
                         use_conf=args.use_conf, 
                         random_sample=args.random_sample)
 
-        dataset = MEDataset(geometric_model=args.geometric_model, 
+        dataset_val = MEDataset(geometric_model=args.geometric_model, 
                         dataset_csv_path=args.dataset_csv_path, 
                         dataset_csv_file='val.csv', 
                         dataset_image_path=args.dataset_image_path,
