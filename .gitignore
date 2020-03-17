@@ -12,3 +12,4 @@ trained_models/
 **/*.bak
 *.png
 .idea
+test.ipynb

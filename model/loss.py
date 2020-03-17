@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from geotnf.point_tnf import PointTnf
-from geotnf.transformation import affine_mat_from_simple
+from geotnf.transformation import affine_mat_from_simple2
 
 class TransformedGridLoss(nn.Module):
     def __init__(self, geometric_model='affine', use_cuda=True, grid_size=20):
@@ -31,9 +31,9 @@ class TransformedGridLoss(nn.Module):
             P_prime = self.pointTnf.affPointTnf(theta,P)
             P_prime_GT = self.pointTnf.affPointTnf(theta_GT,P)
         elif self.geometric_model == 'affine_simple' or self.geometric_model == 'affine_simple_4':
-            theta_aff = affine_mat_from_simple(theta)
+            theta_aff = affine_mat_from_simple2(theta)
             P_prime = self.pointTnf.affPointTnf(theta_aff,P)
-            theta_aff_GT = affine_mat_from_simple(theta_GT)
+            theta_aff_GT = affine_mat_from_simple2(theta_GT)
             P_prime_GT = self.pointTnf.affPointTnf(theta_aff_GT,P)
         elif self.geometric_model=='hom':
             P_prime = self.pointTnf.homPointTnf(theta,P)

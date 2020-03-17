@@ -560,6 +560,21 @@ def affine_mat_from_simple(theta):
 
     return A
 
+def affine_mat_from_simple2(theta):
+    b = theta.size(0)
+    if theta.size() == (b, 3) or theta.size() == (b, 4):
+        t = Variable(torch.zeros(b),requires_grad=False)
+    else:
+        raise ValueError("Calling affine mat simple 2 constructing from theta size %s" % theta.size().__str__())
+    
+    # All elements should have shape of (batch_size) for correct torch.stack
+    cos_alpha = torch.cos(theta[:, 0] / 180.0 * np.pi) * theta[:, 1]
+    sin_alpha = torch.sin(theta[:, 0] / 180.0 * np.pi) * theta[:, 1]
+        
+    A = torch.stack((cos_alpha, -sin_alpha, t, sin_alpha, cos_alpha, t), 1)
+
+    return A
+
 class TpsGridGen(Module):
     def __init__(self, out_h=240, out_w=240, use_regular_grid=True, grid_size=3, reg_factor=0, use_cuda=True):
         super(TpsGridGen, self).__init__()
