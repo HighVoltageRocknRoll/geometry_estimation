@@ -11,7 +11,7 @@ from data.pf_dataset import PFDataset, PFPascalDataset
 from data.caltech_dataset import CaltechDataset
 from data.tss_dataset import TSSDataset
 from data.dataset_3d import Dataset3D
-from data.dataset_3d_me import Dataset3DME
+from data.me_dataset import MEDataset
 from data.download_datasets import *
 from geotnf.point_tnf import *
 from geotnf.transformation import GeometricTnf
@@ -93,11 +93,14 @@ def main(passed_arguments=None):
         collate_fn = default_collate
     elif args.eval_dataset == '3d' and use_me is True:
         cnn_image_size=(args.input_height, args.input_width)
-        dataset = Dataset3DME(csv_file = os.path.join(args.eval_dataset_path, 'all_pairs_3d.csv'),
-                      dataset_path = args.eval_dataset_path,
-                      input_size = cnn_image_size,
-                      crop=args.crop_factor,
-                      use_conf=args.use_conf)
+        dataset = MEDataset(dataset_csv_path=args.eval_dataset_path, 
+                            dataset_csv_file='all_pairs_3d.csv', 
+                            dataset_image_path=args.eval_dataset_path,
+                            input_height=args.input_height, input_width=args.input_width, 
+                            crop=args.crop_factor, 
+                            use_conf=args.use_conf, 
+                            geometric_model='EVAL', 
+                            random_sample=False)
         collate_fn = default_collate
     else:
         raise NotImplementedError('Dataset is unsupported')

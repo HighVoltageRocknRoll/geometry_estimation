@@ -13,7 +13,7 @@ from model.cnn_geometric_model import CNNGeometric
 from model.loss import TransformedGridLoss, MixedLoss
 
 from data.synth_dataset import SynthDataset
-from data.synth_dataset_me import SynthDatasetME
+from data.me_dataset import MEDataset
 from data.download_datasets import download_pascal
 
 from geotnf.transformation import SynthPairTnf
@@ -83,21 +83,23 @@ def main():
 
     # Initialize Dataset objects
     if use_me:
-        dataset = SynthDatasetME(geometric_model=args.geometric_model,
-                        dataset_csv_path=args.dataset_csv_path,
-                        dataset_csv_file='train.csv',
+        dataset = MEDataset(geometric_model=args.geometric_model, 
+                        dataset_csv_path=args.dataset_csv_path, 
+                        dataset_csv_file='train.csv', 
                         dataset_image_path=args.dataset_image_path,
-                        random_sample=args.random_sample,
-                        h=args.input_height, w=args.input_width, 
-                        crop=args.crop_factor, use_conf=args.use_conf)
-        
-        dataset_val = SynthDatasetME(geometric_model=args.geometric_model,
-                        dataset_csv_path=args.dataset_csv_path,
-                        dataset_csv_file='val.csv',
+                        input_height=args.input_height, input_width=args.input_width, 
+                        crop=args.crop_factor, 
+                        use_conf=args.use_conf, 
+                        random_sample=args.random_sample)
+
+        dataset = MEDataset(geometric_model=args.geometric_model, 
+                        dataset_csv_path=args.dataset_csv_path, 
+                        dataset_csv_file='val.csv', 
                         dataset_image_path=args.dataset_image_path,
-                        random_sample=args.random_sample,
-                        h=args.input_height, w=args.input_width, 
-                        crop=args.crop_factor, use_conf=args.use_conf)
+                        input_height=args.input_height, input_width=args.input_width, 
+                        crop=args.crop_factor, 
+                        use_conf=args.use_conf, 
+                        random_sample=args.random_sample)
 
     else:
 
