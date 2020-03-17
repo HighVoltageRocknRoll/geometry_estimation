@@ -173,14 +173,15 @@ def main():
     logs_writer = SummaryWriter(tb_dir)
     # add graph, to do so we have to generate a dummy input to pass along with the graph
     if use_me:
-        dummy_input = {'mv_L2R': torch.rand([args.batch_size, 2, 216, 384], device = device),
-                       'theta_GT': torch.rand([args.batch_size, 4], device = device)}
-        if args.right_disp_input:
-            dummy_input['mv_R2L'] = torch.rand([args.batch_size, 2, 216, 384], device = device)
-        if args.grid_input:
-            dummy_input['grid'] = torch.rand([args.batch_size, 2, 216, 384], device = device)
-        if args.use_conf:
-            dummy_input['confidence'] = torch.rand([args.batch_size, 1, 216, 384], device = device)
+        dummy_input = {
+            'mv_L2R': torch.rand([args.batch_size, 2, 216, 384], device = device),
+            'mv_R2L': torch.rand([args.batch_size, 2, 216, 384], device = device),
+            'grid_L2R': torch.rand([args.batch_size, 2, 216, 384], device = device),
+            'grid_R2L': torch.rand([args.batch_size, 2, 216, 384], device = device),
+            'grid': torch.rand([args.batch_size, 2, 216, 384], device = device),
+            'confidence': torch.rand([args.batch_size, 1, 216, 384], device = device),
+            'theta_GT': torch.rand([args.batch_size, 4], device = device),
+        }
 
     else:
         dummy_input = {'source_image': torch.rand([args.batch_size, 3, 240, 240], device = device),
