@@ -178,31 +178,67 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
         return out
 
-class MERegression(nn.Module):
-    def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[4,32,32,64,64,128]):
-        super(MERegression, self).__init__()
-        nn_modules = []
+# class MERegression(nn.Module):
+#     def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[4,32,32,64,64,128]):
+#         super(MERegression, self).__init__()
+#         nn_modules = []
 
+#         num_blocks = len(channels) - 1
+#         input_size = np.array([216,384], dtype=int)
+
+#         for i in range(num_blocks):
+#             nn_modules.append(BasicBlock(channels[i], channels[i+1], batch_normalization=batch_normalization))
+#             nn_modules.append(nn.MaxPool2d(kernel_size=2))
+#             input_size //= 2
+#         self.conv = nn.Sequential(*nn_modules)    
+
+#         self.linear = nn.Linear(channels[-1] * input_size[0] * input_size[1], output_dim)
+#         if use_cuda:
+#             self.conv.cuda()
+#             self.linear.cuda()
+
+#     def forward(self, x):
+#         x = self.conv(x)
+#         x = x.reshape(x.size(0), -1)
+#         x = self.linear(x)
+#         return x
+
+class MERegression2(nn.Module):
+    def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[4,32,32,64,64,128]):
+        super(MERegression2, self).__init__()
+
+        layers = []
+        layers.append(nn.Conv2d(channels[0], channels[1], kernel_size=7, stride=2, padding=3, bias=False))
+        if batch_normalization:
+            layers.append(nn.BatchNorm2d(channels[1]))
+        layers.append(nn.ReLU(inplace=True))
+        layers.append(nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+        self.prep_layer = nn.Sequential(*layers)
+
+        channels = channels[1:]
+        nn_modules = []
         num_blocks = len(channels) - 1
-        input_size = np.array([216,384], dtype=int)
 
         for i in range(num_blocks):
             nn_modules.append(BasicBlock(channels[i], channels[i+1], batch_normalization=batch_normalization))
-            nn_modules.append(nn.MaxPool2d(kernel_size=2))
-            input_size //= 2
-        self.conv = nn.Sequential(*nn_modules)    
+        self.residual_layers = nn.Sequential(*nn_modules)
 
-        self.linear = nn.Linear(channels[-1] * input_size[0] * input_size[1], output_dim)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.linear = nn.Linear(channels[-1], output_dim)
+
         if use_cuda:
-            self.conv.cuda()
+            self.prep_layer.cuda()
+            self.residual_layers.cuda()
+            self.avgpool.cuda()
             self.linear.cuda()
 
     def forward(self, x):
-        x = self.conv(x)
+        x = self.prep_layer(x)
+        x = self.residual_layers(x)
+        x = self.avgpool(x)
         x = x.reshape(x.size(0), -1)
         x = self.linear(x)
         return x
-    
     
 class CNNGeometric(nn.Module):
     def __init__(self, output_dim=6, 
@@ -212,9 +248,10 @@ class CNNGeometric(nn.Module):
                  fr_channels=[225,128,64],
                  normalize_matches=True, 
                  use_me=False,
+                 me_main_input='disparity',
+                 use_backward_input=False,
                  use_conf=False,
                  grid_input=False,
-                 right_disp_input=False,
                  batch_normalization=True, 
                  use_cuda=True,
                  matching_type='correlation'):
@@ -223,11 +260,23 @@ class CNNGeometric(nn.Module):
         self.use_cuda = use_cuda
         self.normalize_matches = normalize_matches
         self.use_me = use_me
-        self.use_conf = use_conf
-        self.grid_input = grid_input
-        self.right_disp_input = right_disp_input
+
         if self.use_me:
-            self.FeatureRegression = MERegression(output_dim,
+            self.model_input_keys = []
+            if me_main_input == 'disparity' or me_main_input == 'both':
+                self.model_input_keys.append('mv_L2R')
+                if use_backward_input:
+                    self.model_input_keys.append('mv_R2L')
+            if me_main_input == 'grid' or me_main_input == 'both':
+                self.model_input_keys.append('grid_L2R')
+                if use_backward_input:
+                    self.model_input_keys.append('grid_R2L')
+            if grid_input:
+                self.model_input_keys.append('grid')
+            if use_conf:
+                self.model_input_keys.append('confidence')
+
+            self.FeatureRegression = MERegression2(output_dim,
                                              use_cuda=self.use_cuda,
                                              channels=fr_channels,
                                              batch_normalization=batch_normalization)
@@ -251,17 +300,12 @@ class CNNGeometric(nn.Module):
     # used only for foward pass at eval and for training with strong supervision
     def forward(self, tnf_batch):
         if self.use_me:
-            mv_L2R = tnf_batch['mv_L2R']
-            model_input = [mv_L2R]
-            if self.right_disp_input:
-                model_input.append(tnf_batch['mv_R2L'])
-            if self.grid_input:
-                model_input.append(tnf_batch['grid'])
-            if self.use_conf:
-                model_input.append(tnf_batch['confidence'])
+            model_input = []
+            for key in self.model_input_keys:
+                model_input.append(tnf_batch[key])
             
-            mv_concat = torch.cat(model_input, dim=1)
-            theta = self.FeatureRegression(mv_concat)
+            model_input = torch.cat(model_input, dim=1)
+            theta = self.FeatureRegression(model_input)
             return theta
             
         else:

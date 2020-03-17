@@ -17,18 +17,23 @@ class ArgumentParser():
 
     def add_cnn_model_parameters(self):
         model_params = self.parser.add_argument_group('model')
-        # Model parameters
+        
+        model_params.add_argument('--fr-channels', nargs='+', type=int, default=[225,128,64], help='channels in feat. reg. conv layers')
+        model_params.add_argument('--batch-normalization', type=str_to_bool, nargs='?', const=True, default=True, help='use batch norm layers')   
+
+        # CNN-geometric model parameters
         model_params.add_argument('--feature-extraction-cnn', type=str, default='vgg', help='feature extraction CNN model architecture: vgg/resnet101')
         model_params.add_argument('--feature-extraction-last-layer', type=str, default='', help='feature extraction CNN last layer')
         model_params.add_argument('--fr-kernel-sizes', nargs='+', type=int, default=[7,5,5], help='kernels sizes in feat.reg. conv layers')
-        model_params.add_argument('--fr-channels', nargs='+', type=int, default=[225,128,64], help='channels in feat. reg. conv layers')
         model_params.add_argument('--matching-type', type=str, default='correlation', help='correlation/subtraction/concatenation')
         model_params.add_argument('--normalize-matches', type=str_to_bool, nargs='?', const=True, default=True, help='perform L2 normalization')   
-        model_params.add_argument('--batch-normalization', type=str_to_bool, nargs='?', const=True, default=True, help='use batch norm layers')   
+        
+        # ME model parameters
         model_params.add_argument('--use-me', type=str_to_bool, nargs='?', const=True, default=False, help='use ME based model')   
-        model_params.add_argument('--use-conf', type=str_to_bool, nargs='?', const=True, default=False, help='add confidence to Motion Vectors')  
-        model_params.add_argument('--grid-input', type=str_to_bool, nargs='?', const=True, default=False, help='pass grid coordinates as input channel')  
-        model_params.add_argument('--right-disp-input', type=str_to_bool, nargs='?', const=True, default=False, help='pass grid coordinates as input channel')  
+        model_params.add_argument('--me-main-input', type=str, default='disparity', help='main inputs to model: {disparity, grid, both}') 
+        model_params.add_argument('--use-backward-input', type=str_to_bool, nargs='?', const=True, default=False, help='add backward (right-to-left) main inputs')  
+        model_params.add_argument('--use-conf', type=str_to_bool, nargs='?', const=True, default=False, help='add confidence to Motion Vectors as input channel')  
+        model_params.add_argument('--grid-input', type=str_to_bool, nargs='?', const=True, default=False, help='add identity grid coordinates as input channel')  
          
     def add_base_train_parameters(self):
         base_params = self.parser.add_argument_group('base')
