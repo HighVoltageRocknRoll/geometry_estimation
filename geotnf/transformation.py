@@ -564,6 +564,8 @@ def affine_mat_from_simple2(theta):
     b = theta.size(0)
     if theta.size() == (b, 3) or theta.size() == (b, 4):
         t = Variable(torch.zeros(b),requires_grad=False)
+        if theta.is_cuda:
+            t = t.cuda()
     else:
         raise ValueError("Calling affine mat simple 2 constructing from theta size %s" % theta.size().__str__())
     
