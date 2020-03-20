@@ -4,7 +4,31 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from geotnf.point_tnf import PointTnf
-from geotnf.transformation import affine_mat_from_simple2
+from geotnf.transformation import affine_mat_from_simple
+
+def get_rotate_matrix(theta):
+    cos_alpha = torch.cos(theta / 180.0 * np.pi)
+    sin_alpha = torch.sin(theta / 180.0 * np.pi)
+    zero = torch.zeros_like(theta, requires_grad=False)
+    return torch.stack((
+        cos_alpha, -sin_alpha, zero,
+        sin_alpha, cos_alpha, zero
+    ), dim=1)
+
+def get_scale_matrix(theta):
+    zero = torch.zeros_like(theta, requires_grad=False)
+    return torch.stack((
+        theta, zero, zero,
+        zero, theta, zero
+    ), dim=1)
+
+def get_shift_y_matrix(theta):
+    one = torch.ones_like(theta, requires_grad=False)
+    zero = torch.zeros_like(theta, requires_grad=False)
+    return torch.stack((
+        one, zero, zero,
+        zero, one, theta
+    ), dim=1)
 
 class TransformedGridLoss(nn.Module):
     def __init__(self, geometric_model='affine', use_cuda=True, grid_size=20):
@@ -24,23 +48,26 @@ class TransformedGridLoss(nn.Module):
 
     def forward(self, theta, theta_GT):
         # expand grid according to batch size
-        batch_size = theta.size()[0]
+        batch_size = theta.size(0)
         P = self.P.expand(batch_size,2,self.N)
         # compute transformed grid points using estimated and GT tnfs
-        if self.geometric_model=='affine':
-            P_prime = self.pointTnf.affPointTnf(theta,P)
-            P_prime_GT = self.pointTnf.affPointTnf(theta_GT,P)
-        elif self.geometric_model == 'affine_simple' or self.geometric_model == 'affine_simple_4':
-            theta_aff = affine_mat_from_simple2(theta)
-            P_prime = self.pointTnf.affPointTnf(theta_aff,P)
-            theta_aff_GT = affine_mat_from_simple2(theta_GT)
-            P_prime_GT = self.pointTnf.affPointTnf(theta_aff_GT,P)
-        elif self.geometric_model=='hom':
-            P_prime = self.pointTnf.homPointTnf(theta,P)
-            P_prime_GT = self.pointTnf.homPointTnf(theta_GT,P)
-        elif self.geometric_model=='tps':
-            P_prime = self.pointTnf.tpsPointTnf(theta.unsqueeze(2).unsqueeze(3),P)
-            P_prime_GT = self.pointTnf.tpsPointTnf(theta_GT,P)
+        if self.geometric_model == 'affine_simple' or self.geometric_model == 'affine_simple_4':
+            theta_aff = affine_mat_from_simple(theta)
+            theta_aff_GT = affine_mat_from_simple(theta_GT)
+        elif self.geometric_model == 'rotate':
+            theta_aff = get_rotate_matrix(theta)
+            theta_aff_GT = get_rotate_matrix(theta_GT)
+        elif self.geometric_model == 'scale':
+            theta_aff = get_scale_matrix(theta)
+            theta_aff_GT = get_scale_matrix(theta_GT)
+        elif self.geometric_model == 'shift_y':
+            theta_aff = get_shift_y_matrix(theta)
+            theta_aff_GT = get_shift_y_matrix(theta_GT)
+        else:
+            raise NotImplementedError('Specified geometric model is unsupported')
+
+        P_prime = self.pointTnf.affPointTnf(theta_aff,P)
+        P_prime_GT = self.pointTnf.affPointTnf(theta_aff_GT,P)
         # compute MSE loss on transformed grid points
         loss = torch.sum(torch.pow(P_prime - P_prime_GT,2),1)
         loss = torch.mean(loss)
@@ -60,4 +87,31 @@ class MixedLoss(nn.Module):
     def forward(self, theta, theta_GT):
 
         loss = self.mse(theta * self.mse_weight, theta_GT * self.mse_weight) + self.alpha * self.grid(theta, theta_GT)
+        return loss
+
+class SplitLoss(nn.Module):
+    def __init__(self, geometric_model='affine_simple', use_cuda=True, grid_size=20):
+        super(SplitLoss, self).__init__()
+        self.mse_list = [nn.MSELoss(), nn.MSELoss(), nn.MSELoss()]
+
+        self.rotate_mse = nn.MSELoss()
+        self.scale_mse = nn.MSELoss()
+        self.shift_mse = nn.MSELoss()
+
+        self.rotate_grid = TransformedGridLoss(geometric_model='rotate', use_cuda=use_cuda, grid_size=grid_size)
+        self.scale_grid = TransformedGridLoss(geometric_model='scale', use_cuda=use_cuda, grid_size=grid_size)
+        # self.shift_grid = TransformedGridLoss(geometric_model='shift_y', use_cuda=use_cuda, grid_size=grid_size)
+
+        self.weight = torch.tensor([1.0, 2000.0, 200.0, 5000.0, 2000.0, 100.0], requires_grad=False)
+        if use_cuda:
+            self.weight = self.weight.cuda()
+
+    def forward(self, theta, theta_GT):
+        loss = self.rotate_mse(theta[:, 0], theta_GT[:, 0]) * self.weight[0] + \
+               self.scale_mse(theta[:, 1], theta_GT[:, 1]) * self.weight[1] + \
+               self.shift_mse(theta[:, 2], theta_GT[:, 2]) * self.weight[2] + \
+               self.rotate_grid(theta[:, 0], theta_GT[:, 0]) * self.weight[3] + \
+               self.scale_grid(theta[:, 1], theta_GT[:, 1]) * self.weight[4] # + \
+            #    self.shift_grid(theta[:, 2], theta_GT[:, 2]) * self.weight[5]
+                   
         return loss
