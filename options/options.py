@@ -17,7 +17,7 @@ class ArgumentParser():
 
     def add_cnn_model_parameters(self):
         model_params = self.parser.add_argument_group('model')
-        
+
         model_params.add_argument('--fr-channels', nargs='+', type=int, default=[225,128,64], help='channels in feat. reg. conv layers')
         model_params.add_argument('--batch-normalization', type=str_to_bool, nargs='?', const=True, default=True, help='use batch norm layers')   
 
@@ -91,8 +91,7 @@ class ArgumentParser():
         train_params.add_argument('--num-epochs', type=int, default=20, help='number of training epochs')
         train_params.add_argument('--batch-size', type=int, default=16, help='training batch size')
         train_params.add_argument('--seed', type=int, default=1, help='Pseudo-RNG seed')
-        train_params.add_argument('--use-mse-loss', type=str_to_bool, nargs='?', const=True, default=False, help='Use MSE loss on tnf. parameters')        
-        train_params.add_argument('--use-mixed-loss', type=str_to_bool, nargs='?', const=True, default=False, help='Use MSE+grid loss on tnf. parameters')     
+        train_params.add_argument('--loss', type=str, nargs='?', default='split', help='Train loss {mse, grid, mixed, split}')        
         train_params.add_argument('--geometric-model', type=str, default='affine', help='affine/hom/tps')
         # Trained model parameters
         train_params.add_argument('--trained-model-fn', type=str, default='checkpoint_adam', help='trained model filename')

@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from model.cnn_geometric_model import CNNGeometric
-from model.loss import TransformedGridLoss, MixedLoss
+from model.loss import TransformedGridLoss, MixedLoss, SplitLoss
 
 from data.synth_dataset import SynthDataset
 from data.me_dataset import MEDataset
@@ -67,18 +67,25 @@ def main():
         init_theta = torch.tensor([0.0, 1.0, 0.0, 0.0], device = device)
         model.FeatureRegression.linear.bias.data += init_theta
 
-    if args.use_mixed_loss:
+    if args.loss == 'split':
+        print('Using Split loss')
+        loss = SplitLoss(use_cuda=use_cuda,
+                         geometric_model=args.geometric_model,
+                         grid_size=20)
+    elif args.loss == 'mixed':
         print('Using grid+MSE loss...')
         loss = MixedLoss(alpha=1000,
                          use_cuda=use_cuda, 
                          geometric_model=args.geometric_model)
-    elif args.use_mse_loss:
+    elif args.loss == 'mse':
         print('Using MSE loss...')
         loss = nn.MSELoss()
-    else:
+    elif args.loss == 'grid':
         print('Using grid loss...')
         loss = TransformedGridLoss(use_cuda=use_cuda,
                                    geometric_model=args.geometric_model)
+    else:
+        raise NotImplementedError('Specifyed loss %s is not supported' % args.loss)
 
     # Initialize Dataset objects
     if use_me:
@@ -145,21 +152,10 @@ def main():
     # Train
 
     # Set up names for checkpoints
-    if args.use_mixed_loss:
-        ckpt = args.trained_model_fn + '_' + args.geometric_model + '_mixed_loss' + args.feature_extraction_cnn
-        checkpoint_path = os.path.join(args.trained_model_dir,
-                                       args.trained_model_fn,
-                                       ckpt + '.pth.tar')
-    elif args.use_mse_loss:
-        ckpt = args.trained_model_fn + '_' + args.geometric_model + '_mse_loss' + args.feature_extraction_cnn
-        checkpoint_path = os.path.join(args.trained_model_dir,
-                                       args.trained_model_fn,
-                                       ckpt + '.pth.tar')
-    else:
-        ckpt = args.trained_model_fn + '_' + args.geometric_model + '_grid_loss' + args.feature_extraction_cnn
-        checkpoint_path = os.path.join(args.trained_model_dir,
-                                       args.trained_model_fn,
-                                       ckpt + '.pth.tar')
+    ckpt = args.trained_model_fn + '_' + args.geometric_model + '_' + args.loss + '_loss_'
+    checkpoint_path = os.path.join(args.trained_model_dir,
+                                    args.trained_model_fn,
+                                    ckpt + '.pth.tar')
     if not os.path.exists(args.trained_model_dir):
         os.mkdir(args.trained_model_dir)
 
