@@ -174,7 +174,8 @@ def main():
             'grid_L2R': torch.rand([args.batch_size, 2, 216, 384], device = device),
             'grid_R2L': torch.rand([args.batch_size, 2, 216, 384], device = device),
             'grid': torch.rand([args.batch_size, 2, 216, 384], device = device),
-            'confidence': torch.rand([args.batch_size, 1, 216, 384], device = device),
+            'conf_L': torch.rand([args.batch_size, 1, 216, 384], device = device),
+            'conf_R': torch.rand([args.batch_size, 1, 216, 384], device = device),
             'theta_GT': torch.rand([args.batch_size, 4], device = device),
         }
 

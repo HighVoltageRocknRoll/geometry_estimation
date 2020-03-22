@@ -141,9 +141,12 @@ class MEDataset(Dataset):
             mv_L2R = reader['l2r']
             mv_R2L = reader['r2l']
             if self.use_conf:
-                conf = reader['conf']
-                if conf.ndim == 2:
-                    conf = conf[None, ...]
+                conf_L = reader['conf_l']
+                conf_R = reader['conf_r']
+                if conf_L.ndim == 2:
+                    conf_L = conf_L[None, ...]
+                if conf_R.ndim == 2:
+                    conf_R = conf_R[None, ...]
             theta = self.theta[idx, :]
         else:
             if self.use_conf:
@@ -162,8 +165,8 @@ class MEDataset(Dataset):
             mv_L2R, mv_R2L = self.me_handler.calculate_disparity(image_L, image_R)
 
         # make arrays float tensor for subsequent processing
-        grid_L2R = torch.Tensor((self.grid + mv_L2R).astype(np.float32))
-        grid_R2L = torch.Tensor((self.grid + mv_R2L).astype(np.float32))
+        grid_L2R = torch.Tensor((self.grid + mv_L2R / 4).astype(np.float32))
+        grid_R2L = torch.Tensor((self.grid + mv_R2L / 4).astype(np.float32))
         mv_L2R = torch.Tensor(mv_L2R.astype(np.float32))
         mv_R2L = torch.Tensor(mv_R2L.astype(np.float32))
         grid = torch.Tensor(self.grid)
@@ -180,7 +183,9 @@ class MEDataset(Dataset):
         }
         
         if self.use_conf:
-            conf = torch.Tensor(conf.astype(np.float32))
-            sample['confidence'] = conf
+            conf_L = torch.Tensor(conf_L.astype(np.float32))
+            conf_R = torch.Tensor(conf_R.astype(np.float32))
+            sample['conf_L'] = conf_L
+            sample['conf_R'] = conf_R
 
         return sample

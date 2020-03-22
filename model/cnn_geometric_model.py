@@ -263,18 +263,25 @@ class CNNGeometric(nn.Module):
 
         if self.use_me:
             self.model_input_keys = []
+
             if me_main_input == 'disparity' or me_main_input == 'both':
                 self.model_input_keys.append('mv_L2R')
                 if use_backward_input:
                     self.model_input_keys.append('mv_R2L')
+
             if me_main_input == 'grid' or me_main_input == 'both':
                 self.model_input_keys.append('grid_L2R')
                 if use_backward_input:
                     self.model_input_keys.append('grid_R2L')
+
+            if use_conf:
+                self.model_input_keys.append('conf_L')
+                if use_backward_input:
+                    self.model_input_keys.append('conf_R')
+
             if grid_input:
                 self.model_input_keys.append('grid')
-            if use_conf:
-                self.model_input_keys.append('confidence')
+            
 
             self.FeatureRegression = MERegression2(output_dim,
                                              use_cuda=self.use_cuda,
