@@ -262,6 +262,9 @@ class CNNGeometric(nn.Module):
         self.normalize_matches = normalize_matches
         self.use_me = use_me
         self.use_siamese = use_siamese
+        self.theta_inverter = torch.tensor([0.0, 2.0, 0.0], dtype=torch.float32, requires_grad=False)
+        if self.use_cuda:
+            self.theta_inverter = self.theta_inverter.cuda()
 
         if self.use_me:
             self.model_input_keys = []
@@ -330,7 +333,7 @@ class CNNGeometric(nn.Module):
                     siamese_input.append(tnf_batch[key])
                 siamese_input = torch.cat(siamese_input, dim=1)
                 theta_siamese = self.FeatureRegression(siamese_input)
-                theta = torch.cat([theta, theta_siamese], dim=1)
+                theta = torch.cat([theta, self.theta_inverter - theta_siamese], dim=1)
             
             return theta
             
