@@ -248,6 +248,7 @@ class CNNGeometric(nn.Module):
                  fr_channels=[225,128,64],
                  normalize_matches=True, 
                  use_me=False,
+                 use_siamese=False,
                  me_main_input='disparity',
                  use_backward_input=False,
                  use_conf=False,
@@ -260,6 +261,7 @@ class CNNGeometric(nn.Module):
         self.use_cuda = use_cuda
         self.normalize_matches = normalize_matches
         self.use_me = use_me
+        self.use_siamese = use_siamese
 
         if self.use_me:
             self.model_input_keys = []
