@@ -82,9 +82,9 @@ class ArgumentParser():
         train_params = self.parser.add_argument_group('train')
         # Optimization parameters 
         train_params.add_argument('--lr', type=float, default=0.001, help='learning rate')
-        train_params.add_argument('--lr_scheduler', type=str_to_bool,
-                        nargs='?', const=True, default=True,
-                        help='Bool (default True), whether to use a decaying lr_scheduler')
+        train_params.add_argument('--lr_scheduler', type=str,
+                        nargs='?', const=True, default='',
+                        help='Type of lr_scheduler')
         train_params.add_argument('--lr_max_iter', type=int, default=1000,
                         help='Number of steps between lr starting value and 1e-6 '
                              '(lr default min) when choosing lr_scheduler')

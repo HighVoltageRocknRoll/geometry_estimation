@@ -142,10 +142,15 @@ def main():
     # Optimizer and eventual scheduler
     optimizer = optim.Adam(model.FeatureRegression.parameters(), lr=args.lr)
 
-    if args.lr_scheduler:
+    if args.lr_scheduler == 'cosine':
+        
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
                                                                T_max=args.lr_max_iter,
-                                                               eta_min=1e-7)
+                                                               eta_min=1e-9,)
+    elif args.lr_scheduler == 'cosine_restarts':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 
+                                                                         T_0=args.lr_max_iter, 
+                                                                         T_mult=2)
     else:
         scheduler = False
 
