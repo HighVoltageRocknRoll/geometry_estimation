@@ -88,6 +88,7 @@ class ArgumentParser():
         train_params.add_argument('--lr_max_iter', type=int, default=1000,
                         help='Number of steps between lr starting value and 1e-6 '
                              '(lr default min) when choosing lr_scheduler')
+        train_params.add_argument('--lr-decay', type=float, default=0.9, help='multiplier for lr_max in cosine scheduling')
         train_params.add_argument('--num-epochs', type=int, default=20, help='number of training epochs')
         train_params.add_argument('--batch-size', type=int, default=16, help='training batch size')
         train_params.add_argument('--seed', type=int, default=1, help='Pseudo-RNG seed')

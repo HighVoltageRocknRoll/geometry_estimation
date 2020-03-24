@@ -196,6 +196,10 @@ def main():
 
     best_val_loss = float("inf")
 
+    max_batch_iters = len(dataloader)
+    print('Iterations for one epoch:', max_batch_iters)
+    epoch_to_change_lr = int(args.lr_max_iter / max_batch_iters * 2 + 0.5)
+
     for epoch in range(1, args.num_epochs+1):
 
         # we don't need the average epoch loss so we assign it to _
@@ -204,6 +208,9 @@ def main():
                   log_interval=args.log_interval,
                   scheduler=scheduler,
                   tb_writer=logs_writer)
+        # Change lr_max in cosine annealing
+        if scheduler == 'cosine' and (epoch % epoch_to_change_lr == 0):
+            scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
 
         val_loss = validate_model(model, loss,
                                   dataloader_val, pair_generation_tnf,
