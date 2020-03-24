@@ -263,24 +263,32 @@ class CNNGeometric(nn.Module):
 
         if self.use_me:
             self.model_input_keys = []
+            self.siamese_input_keys = []
 
             if me_main_input == 'disparity' or me_main_input == 'both':
                 self.model_input_keys.append('mv_L2R')
+                self.siamese_input_keys.append('mv_R2L')
                 if use_backward_input:
                     self.model_input_keys.append('mv_R2L')
+                    self.siamese_input_keys.append('mv_L2R')
 
             if me_main_input == 'grid' or me_main_input == 'both':
                 self.model_input_keys.append('grid_L2R')
+                self.siamese_input_keys.append('grid_R2L')
                 if use_backward_input:
                     self.model_input_keys.append('grid_R2L')
+                    self.siamese_input_keys.append('grid_L2R')
 
             if use_conf:
                 self.model_input_keys.append('conf_L')
+                self.siamese_input_keys.append('conf_R')
                 if use_backward_input:
                     self.model_input_keys.append('conf_R')
+                    self.siamese_input_keys.append('conf_L')
 
             if grid_input:
                 self.model_input_keys.append('grid')
+                self.siamese_input_keys.append('grid')
             
 
             self.FeatureRegression = MERegression2(output_dim,
@@ -310,9 +318,18 @@ class CNNGeometric(nn.Module):
             model_input = []
             for key in self.model_input_keys:
                 model_input.append(tnf_batch[key])
-            
+
             model_input = torch.cat(model_input, dim=1)
             theta = self.FeatureRegression(model_input)
+
+            if self.use_siamese:
+                siamese_input = []
+                for key in self.siamese_input_keys:
+                    siamese_input.append(tnf_batch[key])
+                siamese_input = torch.cat(siamese_input, dim=1)
+                theta_siamese = self.FeatureRegression(siamese_input)
+                theta = torch.cat([theta, theta_siamese], dim=1)
+            
             return theta
             
         else:

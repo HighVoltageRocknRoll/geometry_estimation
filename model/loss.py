@@ -2,6 +2,7 @@ from __future__ import print_function, division
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.autograd import Variable
 from geotnf.point_tnf import PointTnf
 from geotnf.transformation import affine_mat_from_simple
@@ -89,6 +90,24 @@ class MixedLoss(nn.Module):
         loss = self.mse(theta * self.mse_weight, theta_GT * self.mse_weight) + self.alpha * self.grid(theta, theta_GT)
         return loss
 
+class ContrastiveLoss(torch.nn.Module):
+    """
+    Contrastive loss function.
+    Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
+    """
+
+    def __init__(self, margin=2.0):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, output1, output2, label):
+        euclidean_distance = F.pairwise_distance(output1, output2, keepdim = True)
+        loss_contrastive = torch.mean((1-label) * torch.pow(euclidean_distance, 2) +
+                                      (label) * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
+
+
+        return loss_contrastive
+
 class SplitLoss(nn.Module):
     def __init__(self, geometric_model='affine_simple', use_cuda=True, grid_size=20):
         super(SplitLoss, self).__init__()
@@ -113,5 +132,10 @@ class SplitLoss(nn.Module):
                self.rotate_grid(theta[:, 0], theta_GT[:, 0]) * self.weight[3] + \
                self.scale_grid(theta[:, 1], theta_GT[:, 1]) * self.weight[4] # + \
             #    self.shift_grid(theta[:, 2], theta_GT[:, 2]) * self.weight[5]
+        # Contrastive_part
+        if theta.size(1) > 4:
+            loss += self.rotate_mse(theta[:, 0], theta[:, 3]) * self.weight[0] + \
+               self.scale_mse(theta[:, 1], theta[:, 4]) * self.weight[1] + \
+               self.shift_mse(theta[:, 2], theta[:, 5]) * self.weight[2]
                    
         return loss
