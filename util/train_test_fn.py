@@ -1,7 +1,13 @@
 from __future__ import print_function, division
 import numpy as np
 from tqdm import tqdm
+import warnings
 
+def get_lr(optimizer):
+    if len(optimizer.param_groups) > 1:
+        warnings.warn('multiple param group')
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
 
 def train(epoch, model, loss_fn, optimizer,
           dataloader, pair_generation_tnf,
@@ -42,7 +48,8 @@ def train(epoch, model, loss_fn, optimizer,
             scheduler.step()
             if tb_writer:
                 tb_writer.add_scalar('learning rate',
-                                     scheduler.get_lr()[-1],
+                                     get_lr(optimizer)
+                                    #  scheduler.get_lr()[-1],
                                      (epoch - 1) * len(dataloader) + batch_idx)
 
         train_loss += loss.data.cpu().numpy().item()

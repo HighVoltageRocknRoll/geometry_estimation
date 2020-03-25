@@ -13,3 +13,4 @@ trained_models/
 *.png
 .idea
 test.ipynb
+test.py
