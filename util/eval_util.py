@@ -174,22 +174,22 @@ def absdiff_metrics(batch,batch_start_idx,theta_1,theta_2,geometric_model_1,geom
     np_theta_GT = affine_simple_values.cpu().detach().numpy()
     np_theta = theta_1.cpu().detach().numpy()
 
-    stats[geometric_model_1]['rotate_diff'][indices, 0] = np.abs(np_theta_GT[:, 0] - np_theta[:, 0])[..., None]
-    stats[geometric_model_1]['scale_diff'][indices, 0] = np.abs(np_theta_GT[:, 1] - np_theta[:, 1])[..., None]
-    stats[geometric_model_1]['shift_diff'][indices, 0] = np.abs(np_theta_GT[:, 2] - np_theta[:, 2])[..., None]
+    stats[geometric_model_1]['rotate_diff'][indices, 0] = np.abs(np_theta_GT[:, 0] - np_theta[:, 0])
+    stats[geometric_model_1]['scale_diff'][indices, 0] = np.abs(np_theta_GT[:, 1] - np_theta[:, 1])
+    stats[geometric_model_1]['shift_diff'][indices, 0] = np.abs(np_theta_GT[:, 2] - np_theta[:, 2])
 
-    stats[geometric_model_1]['rotate_value'][indices, 0] = np_theta[:, 0][..., None]
-    stats[geometric_model_1]['scale_value'][indices, 0] = np_theta[:, 1][..., None]
-    stats[geometric_model_1]['shift_value'][indices, 0] = np_theta[:, 2][..., None]
+    stats[geometric_model_1]['rotate_value'][indices, 0] = np_theta[:, 0]
+    stats[geometric_model_1]['scale_value'][indices, 0] = np_theta[:, 1]
+    stats[geometric_model_1]['shift_value'][indices, 0] = np_theta[:, 2]
 
     if affine_simple_values.size(1) > 4:
-        stats[geometric_model_1]['rotate_diff'][indices, 1] = np.abs(np_theta_GT[:, 0] - np_theta[:, 3])[..., None]
-        stats[geometric_model_1]['scale_diff'][indices, 1] = np.abs(np_theta_GT[:, 1] - np_theta[:, 4])[..., None]
-        stats[geometric_model_1]['shift_diff'][indices, 1] = np.abs(np_theta_GT[:, 2] - np_theta[:, 5])[..., None]
+        stats[geometric_model_1]['rotate_diff'][indices, 1] = np.abs(np_theta_GT[:, 0] - np_theta[:, 3])
+        stats[geometric_model_1]['scale_diff'][indices, 1] = np.abs(np_theta_GT[:, 1] - np_theta[:, 4])
+        stats[geometric_model_1]['shift_diff'][indices, 1] = np.abs(np_theta_GT[:, 2] - np_theta[:, 5])
 
-        stats[geometric_model_1]['rotate_value'][indices, 1] = np_theta[:, 3][..., None]
-        stats[geometric_model_1]['scale_value'][indices, 1] = np_theta[:, 4][..., None]
-        stats[geometric_model_1]['shift_value'][indices, 1] = np_theta[:, 5][..., None]
+        stats[geometric_model_1]['rotate_value'][indices, 1] = np_theta[:, 3]
+        stats[geometric_model_1]['scale_value'][indices, 1] = np_theta[:, 4]
+        stats[geometric_model_1]['shift_value'][indices, 1] = np_theta[:, 5]
         
     return stats
 
