@@ -121,7 +121,7 @@ class SplitLoss(nn.Module):
         self.scale_grid = TransformedGridLoss(geometric_model='scale', use_cuda=use_cuda, grid_size=grid_size)
         # self.shift_grid = TransformedGridLoss(geometric_model='shift_y', use_cuda=use_cuda, grid_size=grid_size)
 
-        self.weight = torch.tensor([1.0, 2000.0, 200.0, 5000.0, 2000.0, 100.0], requires_grad=False)
+        self.weight = torch.tensor([1.0, 200.0, 2.0, 5000.0, 200.0, 1.0], requires_grad=False)
         if use_cuda:
             self.weight = self.weight.cuda()
 
