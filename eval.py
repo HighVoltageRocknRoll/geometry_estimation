@@ -46,8 +46,10 @@ def main(passed_arguments=None):
     def create_model(model_filename):
         checkpoint = torch.load(model_filename, map_location=lambda storage, loc: storage)
         checkpoint['state_dict'] = OrderedDict([(k.replace('vgg', 'model'), v) for k, v in checkpoint['state_dict'].items()])
-        output_size = checkpoint['state_dict']['FeatureRegression.linear.bias'].size()[0]
-
+        try:
+            output_size = checkpoint['state_dict']['FeatureRegression.linear.bias'].size()[0]
+        except:
+            output_size = checkpoint['state_dict']['FeatureRegression.resnet.fc.bias'].size()[0]
         if output_size == 4:
             geometric_model = 'affine_simple_4'
         elif output_size == 3:
