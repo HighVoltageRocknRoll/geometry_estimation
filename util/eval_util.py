@@ -62,6 +62,10 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
     # Initialize stats
     two_stage=(model_2 is not None)
     N=len(dataset)
+    if args.use_siamese:
+        vec = 2
+    else:
+        vec = 1
     stats={}
     # decide which results should be computed aff/tps/aff+tps
     stats[geometric_model_1]={}
@@ -89,11 +93,11 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
     # initialize vector for storing results for each metric
     for key in stats.keys():
         for metric in metrics:
-            stats[key][metric] = np.zeros((N,1))
+            stats[key][metric] = np.zeros((N,vec))
         if key == 'affine_simple' or key == 'affine_simple_4':
-            stats[key]['rotate_value'] = np.zeros((N,1))
-            stats[key]['scale_value'] = np.zeros((N,1))
-            stats[key]['shift_value'] = np.zeros((N,1))
+            stats[key]['rotate_value'] = np.zeros((N,vec))
+            stats[key]['scale_value'] = np.zeros((N,vec))
+            stats[key]['shift_value'] = np.zeros((N,vec))
 
     # Compute
     for i, batch in enumerate(tqdm(dataloader, desc='Batch:')):
@@ -131,10 +135,15 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
             for metric in metrics:
                 results=stats[key][metric]
                 print('Total: '+str(results.size))
-                print(metric+' mean:','{:.4}'.format(np.mean(results)))
-                print(metric+' median:','{:.4}'.format(np.median(results)))
+                print(metric+' mean:','{:.4}'.format(np.mean(results[0])))
+                print(metric+' median:','{:.4}'.format(np.median(results[0])))
+                print(metric+' variance:','{:.4}'.format(np.std(results[0])))
+                if vec == 2:
+                    print(metric+'_back mean:','{:.4}'.format(np.mean(results[1])))
+                    print(metric+'_back median:','{:.4}'.format(np.median(results[1])))
+                    print(metric+'_back variance:','{:.4}'.format(np.std(results[1])))
                     
-            print('\n')
+                print()
     else:
         if metric=='flow':
             print('Flow results have been saved to :'+args.flow_output_dir)
@@ -165,13 +174,22 @@ def absdiff_metrics(batch,batch_start_idx,theta_1,theta_2,geometric_model_1,geom
     np_theta_GT = affine_simple_values.cpu().detach().numpy()
     np_theta = theta_1.cpu().detach().numpy()
 
-    stats[geometric_model_1]['rotate_diff'][indices] = np.abs(np_theta_GT[:, 0] - np_theta[:, 0])[..., None]
-    stats[geometric_model_1]['scale_diff'][indices] = np.abs(np_theta_GT[:, 1] - np_theta[:, 1])[..., None]
-    stats[geometric_model_1]['shift_diff'][indices] = np.abs(np_theta_GT[:, 2] - np_theta[:, 2])[..., None]
+    stats[geometric_model_1]['rotate_diff'][indices, 0] = np.abs(np_theta_GT[:, 0] - np_theta[:, 0])[..., None]
+    stats[geometric_model_1]['scale_diff'][indices, 0] = np.abs(np_theta_GT[:, 1] - np_theta[:, 1])[..., None]
+    stats[geometric_model_1]['shift_diff'][indices, 0] = np.abs(np_theta_GT[:, 2] - np_theta[:, 2])[..., None]
 
-    stats[geometric_model_1]['rotate_value'][indices] = np_theta[:, 0][..., None]
-    stats[geometric_model_1]['scale_value'][indices] = np_theta[:, 1][..., None]
-    stats[geometric_model_1]['shift_value'][indices] = np_theta[:, 2][..., None]
+    stats[geometric_model_1]['rotate_value'][indices, 0] = np_theta[:, 0][..., None]
+    stats[geometric_model_1]['scale_value'][indices, 0] = np_theta[:, 1][..., None]
+    stats[geometric_model_1]['shift_value'][indices, 0] = np_theta[:, 2][..., None]
+
+    if affine_simple_values.size(1) > 4:
+        stats[geometric_model_1]['rotate_diff'][indices, 1] = np.abs(np_theta_GT[:, 0] - np_theta[:, 3])[..., None]
+        stats[geometric_model_1]['scale_diff'][indices, 1] = np.abs(np_theta_GT[:, 1] - np_theta[:, 4])[..., None]
+        stats[geometric_model_1]['shift_diff'][indices, 1] = np.abs(np_theta_GT[:, 2] - np_theta[:, 5])[..., None]
+
+        stats[geometric_model_1]['rotate_value'][indices, 1] = np_theta[:, 3][..., None]
+        stats[geometric_model_1]['scale_value'][indices, 1] = np_theta[:, 4][..., None]
+        stats[geometric_model_1]['shift_value'][indices, 1] = np_theta[:, 5][..., None]
         
     return stats
 
