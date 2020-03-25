@@ -201,3 +201,4 @@ class ResNet(nn.Module):
 
 def myresnet(output_dim=3, batch_normalization=True, channels=[6, 2, 2, 2, 2], **kwargs):
     model = ResNet(BasicBlock, channels[1:], input_channels=channels[0], num_classes=output_dim, **kwargs)
+    return model
