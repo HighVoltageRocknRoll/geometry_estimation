@@ -243,6 +243,7 @@ class MERegression2(nn.Module):
 
 class MERegression3(nn.Module):
     def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[6,2,2,2,2]):
+        super(MERegression3, self).__init__()
         self.resnet = myresnet(output_dim=output_dim, batch_normalization=batch_normalization, channels=channels)
         if use_cuda:
             self.resnet = self.resnet.cuda()
