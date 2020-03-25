@@ -6,6 +6,7 @@ import torchvision.models as models
 import numpy as np
 import numpy.matlib
 from geotnf.transformation import GeometricTnf
+from .resnet import myresnet
 
 def featureL2Norm(feature):
     epsilon = 1e-6
@@ -239,7 +240,17 @@ class MERegression2(nn.Module):
         x = x.reshape(x.size(0), -1)
         x = self.linear(x)
         return x
-    
+
+class MERegression3(nn.Module):
+    def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[6,2,2,2,2]):
+        self.resnet = myresnet(output_dim=output_dim, batch_normalization=batch_normalization, channels=channels)
+        if use_cuda:
+            self.resnet = self.resnet.cuda()
+
+    def forward(self, x):
+        x = self.resnet(x)
+        return x
+
 class CNNGeometric(nn.Module):
     def __init__(self, output_dim=6, 
                  feature_extraction_cnn='vgg', 
@@ -295,8 +306,14 @@ class CNNGeometric(nn.Module):
                 self.model_input_keys.append('grid')
                 self.siamese_input_keys.append('grid')
             
-
-            self.FeatureRegression = MERegression2(output_dim,
+            if feature_extraction_cnn != 'resnet':
+                self.FeatureRegression = MERegression2(output_dim,
+                                             use_cuda=self.use_cuda,
+                                             channels=fr_channels,
+                                             batch_normalization=batch_normalization)
+            else:
+                print('Using ResNet arch')
+                self.FeatureRegression = MERegression3(output_dim,
                                              use_cuda=self.use_cuda,
                                              channels=fr_channels,
                                              batch_normalization=batch_normalization)
