@@ -61,11 +61,13 @@ def main():
 
     if args.geometric_model == 'affine_simple':
         init_theta = torch.tensor([0.0, 1.0, 0.0], device = device)
-        model.FeatureRegression.linear.bias.data += init_theta
-    
     elif args.geometric_model == 'affine_simple_4':
         init_theta = torch.tensor([0.0, 1.0, 0.0, 0.0], device = device)
+        
+    try:
         model.FeatureRegression.linear.bias.data += init_theta
+    except:
+        model.FeatureRegression.resnet.fc.bias.data += init_theta
 
     if args.loss == 'split':
         print('Using Split loss')
