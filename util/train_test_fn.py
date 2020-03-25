@@ -4,10 +4,7 @@ from tqdm import tqdm
 import warnings
 
 def get_lr(optimizer):
-    if len(optimizer.param_groups) > 1:
-        warnings.warn('multiple param group')
-    for param_group in optimizer.param_groups:
-        return param_group['lr']
+    return optimizer.param_groups[0]['lr']
 
 def train(epoch, model, loss_fn, optimizer,
           dataloader, pair_generation_tnf,
