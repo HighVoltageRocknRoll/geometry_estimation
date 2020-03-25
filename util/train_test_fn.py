@@ -48,7 +48,7 @@ def train(epoch, model, loss_fn, optimizer,
             scheduler.step()
             if tb_writer:
                 tb_writer.add_scalar('learning rate',
-                                     get_lr(optimizer)
+                                     get_lr(optimizer),
                                     #  scheduler.get_lr()[-1],
                                      (epoch - 1) * len(dataloader) + batch_idx)
 
