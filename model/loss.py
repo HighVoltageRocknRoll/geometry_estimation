@@ -127,10 +127,10 @@ class SplitLoss(nn.Module):
 
     def forward(self, theta, theta_GT):
         loss = self.rotate_mse(theta[:, 0], theta_GT[:, 0]) * self.weight[0] + \
-               self.scale_mse(theta[:, 1], theta_GT[:, 1]) * self.weight[1] + \
-               self.shift_mse(theta[:, 2], theta_GT[:, 2]) * self.weight[2] + \
-               self.rotate_grid(theta[:, 0], theta_GT[:, 0]) * self.weight[3] + \
-               self.scale_grid(theta[:, 1], theta_GT[:, 1]) * self.weight[4] # + \
+               self.rotate_grid(theta[:, 0], theta_GT[:, 0]) * self.weight[3]
+            #    self.scale_mse(theta[:, 1], theta_GT[:, 1]) * self.weight[1] + \
+            #    self.scale_grid(theta[:, 1], theta_GT[:, 1]) * self.weight[4] # + \
+            #    self.shift_mse(theta[:, 2], theta_GT[:, 2]) * self.weight[2] + \
             #    self.shift_grid(theta[:, 2], theta_GT[:, 2]) * self.weight[5]
         # Contrastive_part
         if theta.size(1) > 4:
