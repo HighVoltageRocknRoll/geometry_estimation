@@ -8,8 +8,8 @@ from geotnf.point_tnf import PointTnf
 from geotnf.transformation import affine_mat_from_simple
 
 def get_rotate_matrix(theta):
-    cos_alpha = torch.cos(theta / 180.0 * np.pi)
-    sin_alpha = torch.sin(theta / 180.0 * np.pi)
+    cos_alpha = torch.cos(theta)# / 180.0 * np.pi)
+    sin_alpha = torch.sin(theta)# / 180.0 * np.pi)
     zero = torch.zeros_like(theta, requires_grad=False)
     return torch.stack((
         cos_alpha, -sin_alpha, zero,
@@ -121,7 +121,8 @@ class SplitLoss(nn.Module):
         self.scale_grid = TransformedGridLoss(geometric_model='scale', use_cuda=use_cuda, grid_size=grid_size)
         # self.shift_grid = TransformedGridLoss(geometric_model='shift_y', use_cuda=use_cuda, grid_size=grid_size)
 
-        self.weight = torch.tensor([1.0, 200.0, 2.0, 5000.0, 200.0, 1.0], requires_grad=False)
+        # self.weight = torch.tensor([1.0, 200.0, 2.0, 5000.0, 200.0, 1.0], requires_grad=False)
+        self.weight = torch.tensor([1.0, 200.0, 2.0, 1.0, 200.0, 1.0], requires_grad=False)
         if use_cuda:
             self.weight = self.weight.cuda()
 
