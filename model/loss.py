@@ -8,7 +8,8 @@ from geotnf.point_tnf import PointTnf
 from geotnf.transformation import affine_mat_from_simple
 
 def get_rotate_matrix(theta):
-    cos_alpha = torch.cos(theta)# / 180.0 * np.pi)
+    # cos_alpha = torch.cos(theta)# / 180.0 * np.pi)
+    cos_alpha = torch.ones_like(theta, requires_grad=False)
     sin_alpha = torch.sin(theta)# / 180.0 * np.pi)
     zero = torch.zeros_like(theta, requires_grad=False)
     return torch.stack((
