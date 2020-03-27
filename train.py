@@ -211,8 +211,8 @@ def main():
                   scheduler=scheduler,
                   tb_writer=logs_writer)
         # Change lr_max in cosine annealing
-        if scheduler == 'cosine' and (epoch % epoch_to_change_lr == 0):
-            scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
+        # if scheduler == 'cosine' and (epoch % epoch_to_change_lr == 0):
+            # scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
 
         val_loss = validate_model(model, loss,
                                   dataloader_val, pair_generation_tnf,
