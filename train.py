@@ -218,8 +218,8 @@ def main():
         val_loss = validate_model(model, loss,
                                   dataloader_val, pair_generation_tnf,
                                   epoch, logs_writer)
-        if epoch % 6 == 0:
-            compute_metric('absdiff', model, args.geometric_model, None, None, dataset_val, dataloader_val, pair_generation_tnf, args.batch_size)
+        if epoch % 6 == 0 or epoch == 1:
+            compute_metric('absdiff', model, args.geometric_model, None, None, dataset_val, dataloader_val, pair_generation_tnf, args.batch_size, args)
 
         # remember best loss
         is_best = val_loss < best_val_loss
