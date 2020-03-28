@@ -21,6 +21,7 @@ from geotnf.transformation import SynthPairTnf
 from image.normalization import NormalizeImageDict
 
 from util.train_test_fn import train, validate_model
+from util.eval_util import compute_metric
 from util.torch_util import save_checkpoint, str_to_bool, BatchTensorToVars
 
 from options.options import ArgumentParser
@@ -42,9 +43,9 @@ def main():
     use_me = args.use_me
     device = torch.device('cuda') if use_cuda else torch.device('cpu')
     # Seed
-    torch.manual_seed(args.seed)
-    if use_cuda:
-        torch.cuda.manual_seed(args.seed)
+    # torch.manual_seed(args.seed)
+    # if use_cuda:
+        # torch.cuda.manual_seed(args.seed)
 
     # CNN model and loss
     print('Creating CNN model...')
@@ -217,6 +218,8 @@ def main():
         val_loss = validate_model(model, loss,
                                   dataloader_val, pair_generation_tnf,
                                   epoch, logs_writer)
+        if epoch % 6 == 0:
+            compute_metric('absdiff', model, args.geometric_model, None, None, dataset_val, dataloader_val, pair_generation_tnf, args.batch_size)
 
         # remember best loss
         is_best = val_loss < best_val_loss
