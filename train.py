@@ -223,7 +223,7 @@ def main():
         if args.lr_scheduler == 'cosine' and (epoch % epoch_to_change_lr == 0):
             scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
 
-        if epoch % epoch_to_change_lr == 0 or epoch == 1:
+        if (epoch % epoch_to_change_lr == epoch_to_change_lr // 2) or epoch == 1:
             compute_metric('absdiff', model, args.geometric_model, None, None, dataset_val, dataloader_val, pair_generation_tnf, args.batch_size, args)
 
         # remember best loss
