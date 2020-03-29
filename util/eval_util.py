@@ -134,7 +134,7 @@ def compute_metric(metric,model_1,geometric_model_1,model_2,geometric_model_2,da
             print('=== Results '+key+' ===')
             for metric in metrics:
                 results=stats[key][metric]
-                print('Total: '+str(results.size))
+                print('Total:', results.shape)
                 print(metric+' mean:','{:.4}'.format(np.mean(results[:, 0])))
                 print(metric+' median:','{:.4}'.format(np.median(results[:, 0])))
                 print(metric+' variance:','{:.4}'.format(np.std(results[:, 0])))

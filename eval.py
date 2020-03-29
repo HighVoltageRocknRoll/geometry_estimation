@@ -130,7 +130,7 @@ def main(passed_arguments=None):
     if two_stage:
         model_2.eval()
 
-    print('Starting evaluation...')
+    print('Starting evaluation...', flush=True)
         
     stats=compute_metric(metric,
                          model_1,

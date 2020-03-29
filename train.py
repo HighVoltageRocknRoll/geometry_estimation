@@ -154,6 +154,9 @@ def main():
         scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 
                                                                          T_0=args.lr_max_iter, 
                                                                          T_mult=2)
+    # elif args.lr_scheduler == 'step':
+        # step_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=0.1)
+        # scheduler = False
     else:
         scheduler = False
 
@@ -211,14 +214,16 @@ def main():
                   log_interval=args.log_interval,
                   scheduler=scheduler,
                   tb_writer=logs_writer)
-        # Change lr_max in cosine annealing
-        # if scheduler == 'cosine' and (epoch % epoch_to_change_lr == 0):
-            # scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
 
         val_loss = validate_model(model, loss,
                                   dataloader_val, pair_generation_tnf,
                                   epoch, logs_writer)
-        if epoch % 6 == 0 or epoch == 1:
+
+        # Change lr_max in cosine annealing
+        if args.lr_scheduler == 'cosine' and (epoch % epoch_to_change_lr == 0):
+            scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
+
+        if epoch % epoch_to_change_lr == 0 or epoch == 1:
             compute_metric('absdiff', model, args.geometric_model, None, None, dataset_val, dataloader_val, pair_generation_tnf, args.batch_size, args)
 
         # remember best loss
