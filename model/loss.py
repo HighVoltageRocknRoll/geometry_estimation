@@ -136,7 +136,7 @@ class SplitLoss(nn.Module):
 
         # self.weight = torch.tensor([1.0, 2000.0, 200.0, 5000.0, 2000.0, 100.0], requires_grad=False)
         # self.weight = torch.tensor([100.0, 2000.0, 1.0, 1.0, 200.0, 1.0], requires_grad=False)
-        self.weight = torch.tensor([10.0, 100.0, 1.0, 5000.0], requires_grad=False)
+        self.weight = torch.tensor([10.0, 1000.0, 20.0, 5000.0], requires_grad=False)
         if use_cuda:
             self.weight = self.weight.cuda()
 

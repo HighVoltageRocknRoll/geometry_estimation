@@ -181,15 +181,16 @@ class BasicBlock(nn.Module):
         return out
 
 class MERegression2(nn.Module):
-    def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[4,32,32,64,64,128]):
+    def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[4,32,32,64,64,128], extended_prep_layer=True):
         super(MERegression2, self).__init__()
 
         layers = []
-        layers.append(nn.Conv2d(channels[0], channels[1], kernel_size=7, stride=2, padding=3, bias=False))
+        layers.append(nn.Conv2d(channels[0], channels[1], kernel_size=7, stride=2, padding=3, bias=(not extended_prep_layer)))
         if batch_normalization:
             layers.append(nn.BatchNorm2d(channels[1]))
-        layers.append(nn.ReLU(inplace=True))
-        layers.append(nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+        if extended_prep_layer:
+            layers.append(nn.ReLU(inplace=True))
+            layers.append(nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
         self.prep_layer = nn.Sequential(*layers)
 
         channels = channels[1:]
@@ -213,7 +214,8 @@ class MERegression2(nn.Module):
         x = self.prep_layer(x)
         x = self.residual_layers(x)
         x = self.avgpool(x)
-        x = x.reshape(x.size(0), -1)
+        x = torch.flatten(x, 1)
+        # x = x.reshape(x.size(0), -1)
         x = self.linear(x)
         return x
 
