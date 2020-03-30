@@ -239,6 +239,7 @@ class CNNGeometric(nn.Module):
                  normalize_matches=True, 
                  use_me=False,
                  use_siamese=False,
+                 extended_prep_layer=True,
                  me_main_input='disparity',
                  use_backward_input=False,
                  use_conf=False,
@@ -303,7 +304,8 @@ class CNNGeometric(nn.Module):
                 self.FeatureRegression = MERegression2(output_dim,
                                              use_cuda=self.use_cuda,
                                              channels=fr_channels,
-                                             batch_normalization=batch_normalization)
+                                             batch_normalization=batch_normalization,
+                                             extended_prep_layer=extended_prep_layer)
             if self.use_cuda:
                 self.FeatureRegression = self.FeatureRegression.cuda()
         else:    
