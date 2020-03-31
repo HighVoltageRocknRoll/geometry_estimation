@@ -31,7 +31,7 @@ class ArgumentParser():
         # ME model parameters
         model_params.add_argument('--use-me', type=str_to_bool, nargs='?', const=True, default=False, help='use ME based model')   
         model_params.add_argument('--use-siamese', type=str_to_bool, nargs='?', const=True, default=False, help='use siamese part for backward disparity')   
-        model_params.add_argument('--extended-prep-layer', type=str_to_bool, nargs='?', const=True, default=False, help='add relu and maxpool to prep_layer')   
+        model_params.add_argument('--extended-prep-layer', type=str_to_bool, nargs='?', const=True, default=True, help='add relu and maxpool to prep_layer')   
         model_params.add_argument('--me-main-input', type=str, default='disparity', help='main inputs to model: {disparity, grid, both}') 
         model_params.add_argument('--use-backward-input', type=str_to_bool, nargs='?', const=True, default=False, help='add backward (right-to-left) main inputs')  
         model_params.add_argument('--use-conf', type=str_to_bool, nargs='?', const=True, default=False, help='add confidence to Motion Vectors as input channel')  
