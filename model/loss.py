@@ -10,7 +10,7 @@ from geotnf.transformation import affine_mat_from_simple
 def get_rotate_matrix(theta):
     # cos_alpha = torch.cos(theta)# / 180.0 * np.pi)
     cos_alpha = torch.ones_like(theta, requires_grad=False)
-    sin_alpha = torch.sin(theta)# / 180.0 * np.pi)
+    sin_alpha = torch.sin(theta / 180.0 * np.pi)
     zero = torch.zeros_like(theta, requires_grad=False)
     return torch.stack((
         cos_alpha, -sin_alpha, zero,
@@ -45,6 +45,18 @@ class TransformedGridLoss(nn.Module):
     def __init__(self, geometric_model='affine', use_cuda=True, grid_size=20):
         super(TransformedGridLoss, self).__init__()
         self.geometric_model = geometric_model
+        if self.geometric_model == 'vqmt3d':
+            self.get_mat_fun = None
+        elif self.geometric_model == 'affine_simple' or self.geometric_model == 'affine_simple_4':
+            self.get_mat_fun = affine_mat_from_simple
+        elif self.geometric_model == 'rotate':
+            self.get_mat_fun = get_rotate_matrix
+        elif self.geometric_model == 'scale':
+            self.get_mat_fun = get_scale_matrix
+        elif self.geometric_model == 'shift_y':
+            self.get_mat_fun = get_shift_y_matrix
+        else:
+            raise NotImplementedError('Specified geometric model is unsupported')
         # define virtual grid of points to be transformed
         axis_coords = np.linspace(-1,1,grid_size)
         self.N = grid_size*grid_size
@@ -62,23 +74,12 @@ class TransformedGridLoss(nn.Module):
         batch_size = theta.size(0)
         P = self.P.expand(batch_size,2,self.N)
         # compute transformed grid points using estimated and GT tnfs
-        if self.geometric_model == 'vqmt3d':
+        if self.get_mat_fun:
+            theta_aff = self.get_mat_fun(theta)
+            theta_aff_GT = self.get_mat_fun(theta_GT)
+        else:
             theta_aff = get_vqmt3d_matrix(theta[:, 0], theta[:, 1])
             theta_aff_GT = get_vqmt3d_matrix(theta_GT[:, 0], theta_GT[:, 1])
-        elif self.geometric_model == 'affine_simple' or self.geometric_model == 'affine_simple_4':
-            theta_aff = affine_mat_from_simple(theta)
-            theta_aff_GT = affine_mat_from_simple(theta_GT)
-        elif self.geometric_model == 'rotate':
-            theta_aff = get_rotate_matrix(theta)
-            theta_aff_GT = get_rotate_matrix(theta_GT)
-        elif self.geometric_model == 'scale':
-            theta_aff = get_scale_matrix(theta)
-            theta_aff_GT = get_scale_matrix(theta_GT)
-        elif self.geometric_model == 'shift_y':
-            theta_aff = get_shift_y_matrix(theta)
-            theta_aff_GT = get_shift_y_matrix(theta_GT)
-        else:
-            raise NotImplementedError('Specified geometric model is unsupported')
 
         P_prime = self.pointTnf.affPointTnf(theta_aff,P)
         P_prime_GT = self.pointTnf.affPointTnf(theta_aff_GT,P)
@@ -129,14 +130,15 @@ class SplitLoss(nn.Module):
         self.scale_mse = nn.MSELoss()
         self.shift_mse = nn.MSELoss()
 
-        self.grid = TransformedGridLoss(geometric_model='vqmt3d', use_cuda=use_cuda, grid_size=grid_size)
-        # self.rotate_grid = TransformedGridLoss(geometric_model='rotate', use_cuda=use_cuda, grid_size=grid_size)
-        # self.scale_grid = TransformedGridLoss(geometric_model='scale', use_cuda=use_cuda, grid_size=grid_size)
+        # self.grid = TransformedGridLoss(geometric_model='vqmt3d', use_cuda=use_cuda, grid_size=grid_size)
+        self.rotate_grid = TransformedGridLoss(geometric_model='rotate', use_cuda=use_cuda, grid_size=grid_size)
+        self.scale_grid = TransformedGridLoss(geometric_model='scale', use_cuda=use_cuda, grid_size=grid_size)
         # self.shift_grid = TransformedGridLoss(geometric_model='shift_y', use_cuda=use_cuda, grid_size=grid_size)
 
         # self.weight = torch.tensor([1.0, 2000.0, 200.0, 5000.0, 2000.0, 100.0], requires_grad=False)
+        self.weight = torch.tensor([1.0, 10000.0, 200.0, 5000.0, 10000.0], requires_grad=False)
         # self.weight = torch.tensor([100.0, 2000.0, 1.0, 1.0, 200.0, 1.0], requires_grad=False)
-        self.weight = torch.tensor([10.0, 1000.0, 20.0, 5000.0], requires_grad=False)
+        # self.weight = torch.tensor([10.0, 1000.0, 20.0, 5000.0], requires_grad=False)
         if use_cuda:
             self.weight = self.weight.cuda()
 
@@ -144,10 +146,10 @@ class SplitLoss(nn.Module):
         loss = self.rotate_mse(theta[:, 0], theta_GT[:, 0]) * self.weight[0] + \
                self.scale_mse(theta[:, 1], theta_GT[:, 1]) * self.weight[1] + \
                self.shift_mse(theta[:, 2], theta_GT[:, 2]) * self.weight[2]  + \
-               self.grid(theta, theta_GT) * self.weight[3]
-            #    self.rotate_grid(theta[:, 0], theta_GT[:, 0]) * self.weight[3] + \
-            #    self.scale_grid(theta[:, 1], theta_GT[:, 1]) * self.weight[4] + \
+               self.rotate_grid(theta[:, 0], theta_GT[:, 0]) * self.weight[3] + \
+               self.scale_grid(theta[:, 1], theta_GT[:, 1]) * self.weight[4] # + \
             #    self.shift_grid(theta[:, 2], theta_GT[:, 2]) * self.weight[5]
+            #    self.grid(theta, theta_GT) * self.weight[3]
         # Contrastive_part
         if theta.size(1) > 4:
             loss += self.rotate_mse(theta[:, 0], theta[:, 3]) * self.weight[0] + \
