@@ -2,7 +2,10 @@ from __future__ import print_function, division
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-import torchvision.models as models
+try:
+    import torchvision.models as models
+except:
+    pass
 import numpy as np
 import numpy.matlib
 from geotnf.transformation import GeometricTnf

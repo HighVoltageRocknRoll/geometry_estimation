@@ -6,7 +6,10 @@ from skimage import io
 import warnings
 import pandas as pd
 import numpy as np
-import cv2
+try:
+    import cv2
+except:
+    pass
 from torch.utils.data import Dataset
 from geotnf.transformation import GeometricTnf
 from torch.autograd import Variable
