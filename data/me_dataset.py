@@ -8,14 +8,14 @@ import pandas as pd
 import numpy as np
 try:
     import cv2
+    from pythonME.me_handler import MEHandler
 except:
+    print("Modules cv2, pyME are not loaded: warping or ME on training may not work")
     pass
 from torch.utils.data import Dataset
 from geotnf.transformation import GeometricTnf
 from torch.autograd import Variable
 from geotnf.transformation import homography_mat_from_4_pts
-from pythonME.me_handler import MEHandler
-
 
 
 class Warper(object):
