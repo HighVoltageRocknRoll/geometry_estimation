@@ -14,7 +14,7 @@ from model.loss import TransformedGridLoss, MixedLoss, SplitLoss
 
 from data.synth_dataset import SynthDataset
 from data.me_dataset import MEDataset
-from data.download_datasets import download_pascal
+# from data.download_datasets import download_pascal
 
 from geotnf.transformation import SynthPairTnf
 

@@ -12,7 +12,7 @@ from data.caltech_dataset import CaltechDataset
 from data.tss_dataset import TSSDataset
 from data.dataset_3d import Dataset3D
 from data.me_dataset import MEDataset
-from data.download_datasets import *
+# from data.download_datasets import *
 from geotnf.point_tnf import *
 from geotnf.transformation import GeometricTnf
 from image.normalization import NormalizeImageDict
