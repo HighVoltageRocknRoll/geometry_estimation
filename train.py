@@ -34,9 +34,9 @@ on the PF/PF-pascal/Caltech-101 and TSS datasets
 
 """
 
-def load_checkpoint(checkpoint_filename, model, optimizer):
+def load_checkpoint(checkpoint_filename, model, optimizer, device):
     if os.path.exists(checkpoint_filename):
-        checkpoint = torch.load(checkpoint_filename)
+        checkpoint = torch.load(checkpoint_filename, map_location=device)
 
         model.load_state_dict(checkpoint['state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer'])
@@ -222,7 +222,7 @@ def main():
     epoch_to_change_lr = int(args.lr_max_iter / max_batch_iters * 2 + 0.5)
 
     # Loading checkpoint
-    model, optimizer, start_epoch, best_val_loss = load_checkpoint(checkpoint_path, model, optimizer)
+    model, optimizer, start_epoch, best_val_loss = load_checkpoint(checkpoint_path, model, optimizer, device)
     for epoch in range(1, start_epoch):
         if args.lr_scheduler == 'cosine' and (epoch % epoch_to_change_lr == 0):
             scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
