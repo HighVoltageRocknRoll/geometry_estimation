@@ -10,7 +10,8 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from model.cnn_geometric_model import CNNGeometric
-from model.loss import TransformedGridLoss, MixedLoss, SplitLoss
+from model.loss_old import TransformedGridLoss, MixedLoss
+from model.loss import SplitLoss
 
 from data.synth_dataset import SynthDataset
 from data.me_dataset import MEDataset
