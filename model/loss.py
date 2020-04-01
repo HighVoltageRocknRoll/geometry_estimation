@@ -51,7 +51,7 @@ class SequentialGridLoss(nn.Module):
         X = X.ravel()[None, None, ...]
         Y = Y.ravel()[None, None, ...]
         P = np.concatenate((X, Y), axis=1)
-        self.P = torch.tensor(P, requires_grad=False)
+        self.P = torch.tensor(P, dtype=torch.float32, requires_grad=False)
         self.pointTnf = PointTnf(use_cuda=use_cuda)
         if use_cuda:
             self.P = self.P.cuda()
@@ -93,18 +93,17 @@ class SplitLoss(nn.Module):
 
         self.sequential_grid = SequentialGridLoss(use_cuda=use_cuda, grid_size=grid_size)
 
-        # self.weight = torch.tensor([1.0, 10000.0, 200.0, 5000.0, 10000.0], requires_grad=False)
-        self.weight = torch.tensor([1.0, 1.0, 1.0, 1.0, 1.0, 1.0], requires_grad=False)
+        self.weight = torch.tensor([1.0, 10000.0, 10000.0, 5000.0, 3000.0, 3000.0], requires_grad=False)
         if use_cuda:
             self.weight = self.weight.cuda()
 
     def forward(self, theta, theta_GT):
-        loss = torch.tensor((
+        loss = torch.stack((
             self.rotate_mse(theta[:, 0], theta_GT[:, 0]),
             self.scale_mse(theta[:, 1], theta_GT[:, 1]),
             self.shift_mse(theta[:, 2], theta_GT[:, 2]),
             *self.sequential_grid(theta, theta_GT)
-        ), requires_grad=True)
+        ))
         loss = torch.sum(loss * self.weight)
         
         if theta.size(1) > 4:
