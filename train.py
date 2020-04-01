@@ -165,7 +165,7 @@ def main():
         
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
                                                                T_max=args.lr_max_iter,
-                                                               eta_min=1e-9,)
+                                                               eta_min=1e-7)
     elif args.lr_scheduler == 'cosine_restarts':
         scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 
                                                                          T_0=args.lr_max_iter, 
