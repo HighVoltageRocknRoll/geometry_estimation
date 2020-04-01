@@ -130,6 +130,7 @@ def main(passed_arguments=None):
     if two_stage:
         model_2.eval()
 
+    print(os.path.basename(args.model_1))
     print('Starting evaluation...', flush=True)
         
     stats=compute_metric(metric,
