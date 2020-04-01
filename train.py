@@ -34,6 +34,21 @@ on the PF/PF-pascal/Caltech-101 and TSS datasets
 
 """
 
+def load_checkpoint(checkpoint_filename, model, optimizer):
+    if os.path.exists(checkpoint_filename):
+        checkpoint = torch.load(checkpoint_filename)
+
+        model.load_state_dict(checkpoint['state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        epoch = checkpoint['epoch']
+        best_val_loss = checkpoint['best_val_loss']
+        print('Continue training from %d epoch' % epoch)
+    else:
+        epoch = 1
+        best_val_loss = float("inf")
+
+    return model, optimizer, epoch, best_val_loss
+
 def main():
 
     args,arg_groups = ArgumentParser(mode='train').parse()
@@ -206,7 +221,13 @@ def main():
     print('Iterations for one epoch:', max_batch_iters)
     epoch_to_change_lr = int(args.lr_max_iter / max_batch_iters * 2 + 0.5)
 
-    for epoch in range(1, args.num_epochs+1):
+    # Loading checkpoint
+    model, optimizer, start_epoch, best_val_loss = load_checkpoint(checkpoint_path, model, optimizer)
+    for epoch in range(1, start_epoch):
+        if args.lr_scheduler == 'cosine' and (epoch % epoch_to_change_lr == 0):
+            scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
+
+    for epoch in range(start_epoch, args.num_epochs+1):
 
         # we don't need the average epoch loss so we assign it to _
         _ = train(epoch, model, loss, optimizer,
