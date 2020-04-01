@@ -19,7 +19,7 @@ from image.normalization import NormalizeImageDict
 from model.cnn_geometric_model import CNNGeometric
 from options.options import ArgumentParser
 from util.torch_util import BatchTensorToVars, str_to_bool
-from util.eval_util import pck_metric, area_metrics, flow_metrics, compute_metric
+from util.eval_util import pck_metric, area_metrics, flow_metrics, compute_metric, save_dict
 from util.dataloader import default_collate
 
 """
@@ -142,6 +142,8 @@ def main(passed_arguments=None):
                          batch_tnf,
                          batch_size,
                          args)
+    stats_fn = os.path.join(os.path.dirname(args.model_1), "stats.pkl")
+    save_dict(stats_fn, stats)
     return stats 
 
 if __name__ == '__main__':

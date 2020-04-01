@@ -3,6 +3,7 @@ import numpy as np
 import os
 from skimage import draw
 from tqdm import tqdm
+import pickle
 from geotnf.transformation import GeometricTnf,homography_mat_from_4_pts,affine_mat_from_simple
 from geotnf.point_tnf import compose_H_matrices, compose_aff_matrices, compose_tps, compose_simple
 from geotnf.flow import th_sampling_grid_to_np_flow, write_flo_file
@@ -14,6 +15,10 @@ from geotnf.point_tnf import PointTnf, PointsToUnitCoords, PointsToPixelCoords
 from util.py_util import create_file_path
 from util.torch_util import expand_dim
 from geotnf.point_tnf import PointTnf
+
+def save_dict(path, mydict):
+    with open(path, "wb") as f:
+        pickle.dump(mydict, f)
 
 def eval_model_multistage(model,geometric_model,num_of_iters,source_image,target_image):
     if geometric_model == 'affine_simple' or geometric_model == 'affine_simple_4':
