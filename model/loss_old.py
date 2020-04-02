@@ -86,17 +86,6 @@ class TransformedGridLoss(nn.Module):
         # compute MSE loss on transformed grid points
         loss = torch.sum(torch.pow(P_prime - P_prime_GT,2),1)
         loss = torch.mean(loss)
-        rotate_mat
-        scale_mat
-        shift_mat
-
-        P
-        P_rotate = p * rotate
-        L_rotate = L(P_rotate, P_)
-        P_scale = P_rotate * scale
-        L_scale = L(P_scale)
-
-        L_rotate * W_rotate +
         return loss
 
 
