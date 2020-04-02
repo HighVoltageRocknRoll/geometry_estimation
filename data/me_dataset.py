@@ -168,19 +168,19 @@ class MEDataset(Dataset):
             mv_L2R, mv_R2L = self.me_handler.calculate_disparity(image_L, image_R)
 
         # make arrays float tensor for subsequent processing
-        grid_L2R = torch.Tensor((self.grid + mv_L2R / 4).astype(np.float32))
-        grid_R2L = torch.Tensor((self.grid + mv_R2L / 4).astype(np.float32))
+        # grid_L2R = torch.Tensor((self.grid + mv_L2R / 4).astype(np.float32))
+        # grid_R2L = torch.Tensor((self.grid + mv_R2L / 4).astype(np.float32))
         mv_L2R = torch.Tensor(mv_L2R.astype(np.float32))
         mv_R2L = torch.Tensor(mv_R2L.astype(np.float32))
-        grid = torch.Tensor(self.grid)
+        # grid = torch.Tensor(self.grid)
         theta = torch.Tensor(theta.astype(np.float32))
 
         sample = {
             'mv_L2R': mv_L2R,
             'mv_R2L': mv_R2L,
-            'grid': grid,
-            'grid_L2R': grid_L2R,
-            'grid_R2L': grid_R2L,
+            # 'grid': grid,
+            # 'grid_L2R': grid_L2R,
+            # 'grid_R2L': grid_R2L,
             'theta_GT': theta,
             'affine_simple_values': theta,
         }
