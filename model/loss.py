@@ -94,17 +94,21 @@ class SplitLoss(nn.Module):
         self.sequential_grid = SequentialGridLoss(use_cuda=use_cuda, grid_size=grid_size)
 
         self.weight = torch.tensor([1.0, 10000.0, 10000.0, 5000.0, 3000.0, 3000.0], requires_grad=False)
+        self.saved_values = torch.zeros_like(self.weight)
         if use_cuda:
             self.weight = self.weight.cuda()
+            self.saved_values = self.saved_values.cuda()
 
     def forward(self, theta, theta_GT):
-        loss = torch.stack((
+        split_loss = torch.stack((
             self.rotate_mse(theta[:, 0], theta_GT[:, 0]),
             self.scale_mse(theta[:, 1], theta_GT[:, 1]),
             self.shift_mse(theta[:, 2], theta_GT[:, 2]),
             *self.sequential_grid(theta, theta_GT)
         ))
-        loss = torch.sum(loss * self.weight)
+        split_loss *= self.weight
+        self.saved_values = split_loss.clone().detach()
+        loss = torch.sum(split_loss)
         
         if theta.size(1) > 4:
             loss += self.rotate_mse(theta[:, 0], theta[:, 3]) * self.weight[0] + \

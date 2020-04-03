@@ -55,7 +55,7 @@ def calculate_all_diff(ref_table, newtable):
 
 RESULTS_DIR = r"C:\Users\22k_koz\Desktop\work\results"
 LOGDIR =  r"C:\Users\22k_koz\Desktop\work\logdir"
-MODEL_FN = "APR01_dispback_conf_01"
+MODEL_FN = "APR03_dispback_conf_01"
 
 def main():
     with open(os.path.join(LOGDIR, MODEL_FN, 'stats.pkl'), 'rb') as f:

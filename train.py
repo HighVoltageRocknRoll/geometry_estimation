@@ -235,7 +235,8 @@ def main():
                   dataloader, pair_generation_tnf,
                   log_interval=args.log_interval,
                   scheduler=scheduler,
-                  tb_writer=logs_writer)
+                  tb_writer=logs_writer,
+                  visualize_loss=args.visualize_loss)
 
         val_loss = validate_model(model, loss,
                                   dataloader_val, pair_generation_tnf,
