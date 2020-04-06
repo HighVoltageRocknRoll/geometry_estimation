@@ -36,6 +36,7 @@ class ArgumentParser():
         model_params.add_argument('--use-backward-input', type=str_to_bool, nargs='?', const=True, default=False, help='add backward (right-to-left) main inputs')  
         model_params.add_argument('--use-conf', type=str_to_bool, nargs='?', const=True, default=False, help='add confidence to Motion Vectors as input channel')  
         model_params.add_argument('--grid-input', type=str_to_bool, nargs='?', const=True, default=False, help='add identity grid coordinates as input channel')  
+        model_params.add_argument('--use-random-patch', type=str_to_bool, nargs='?', const=True, default=False, help='use random cropped patch of input instead of full')  
          
     def add_base_train_parameters(self):
         base_params = self.parser.add_argument_group('base')

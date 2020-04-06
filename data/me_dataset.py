@@ -100,12 +100,14 @@ class MEDataset(Dataset):
                  input_height, input_width,
                  crop,
                  use_conf,
+                 use_random_patch,
                  geometric_model='affine_simple_4', 
                  random_sample=True):
     
         # read csv file
         self.csv = pd.read_csv(os.path.join(dataset_csv_path, dataset_csv_file))
         self.random_sample = random_sample
+        self.use_random_patch = use_random_patch
 
         h_cropped = int(input_height - input_height*crop)
         w_cropped = int(input_width - input_width*crop)
@@ -167,12 +169,29 @@ class MEDataset(Dataset):
             # Calculate Motion Vectors
             mv_L2R, mv_R2L = self.me_handler.calculate_disparity(image_L, image_R)
 
+        grid = self.grid
+
+        if self.use_random_patch:
+            patch_h, patch_w = 100, 100
+            _, h, w = mv_L2R.shape
+            h_off = np.random.randint(0, h - patch_h)
+            w_off = np.random.randint(0, w - patch_w)
+            def mycrop(np_array):
+                return np_array[:, h_off:h_off+patch_h, w_off:w_off+patch_w]
+            
+            mv_L2R = mycrop(mv_L2R)
+            mv_R2L = mycrop(mv_R2L)
+            grid = mycrop(grid)
+            if self.use_conf:
+                conf_L = mycrop(conf_L)
+                conf_R = mycrop(conf_R)
+
         # make arrays float tensor for subsequent processing
-        grid_L2R = torch.Tensor((self.grid + mv_L2R / 4).astype(np.float32))
-        grid_R2L = torch.Tensor((self.grid + mv_R2L / 4).astype(np.float32))
+        grid_L2R = torch.Tensor((grid + mv_L2R).astype(np.float32))
+        grid_R2L = torch.Tensor((grid + mv_R2L).astype(np.float32))
         mv_L2R = torch.Tensor(mv_L2R.astype(np.float32))
         mv_R2L = torch.Tensor(mv_R2L.astype(np.float32))
-        grid = torch.Tensor(self.grid)
+        grid = torch.Tensor(grid)
         theta = torch.Tensor(theta.astype(np.float32))
 
         sample = {

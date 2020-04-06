@@ -101,6 +101,7 @@ def main(passed_arguments=None):
                             input_height=args.input_height, input_width=args.input_width, 
                             crop=args.crop_factor, 
                             use_conf=args.use_conf, 
+                            use_random_patch=args.use_random_patch,
                             geometric_model='EVAL', 
                             random_sample=False)
         collate_fn = default_collate
