@@ -144,7 +144,11 @@ def main(passed_arguments=None):
                          batch_tnf,
                          batch_size,
                          args)
-    stats_fn = os.path.join(os.path.dirname(args.model_1), "stats.pkl")
+    if args.eval_dataset_path.find('merged') >= 0:
+        stats_fn = 'stats_merged.pkl'
+    else:
+        stats_fn = 'stats.pkl'
+    stats_fn = os.path.join(os.path.dirname(args.model_1), stats_fn)
     save_dict(stats_fn, stats)
     return stats 
 
