@@ -149,7 +149,9 @@ class ResNet(nn.Module):
         # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
         if zero_init_residual and self.use_bn:
             for m in self.modules():
-                if isinstance(m, BasicBlock):
+                if isinstance(m, Bottleneck):
+                    nn.init.constant_(m.bn3.weight, 0)
+                elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
     def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
@@ -203,5 +205,6 @@ def myresnet(output_dim=3, batch_normalization=True, channels=[6, 2, 2, 2, 2], *
     return model
 
 def myresnet_big(output_dim=3, batch_normalization=True, channels=[6, 2, 2, 2, 2], **kwargs):
+    kwargs['zero_init_residual'] = True
     model = ResNet(Bottleneck, channels[1:], input_channels=channels[0], num_classes=output_dim, batch_normalization=batch_normalization, **kwargs)
     return model
