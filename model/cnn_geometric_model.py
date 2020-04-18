@@ -9,8 +9,7 @@ except:
 import numpy as np
 import numpy.matlib
 from geotnf.transformation import GeometricTnf
-from .resnet import myresnet
-from .new_me_regression import MERegression4
+from .resnet import myresnet, myresnet_big
 
 def featureL2Norm(feature):
     epsilon = 1e-6
@@ -183,9 +182,9 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
         return out
 
-class MERegression2(nn.Module):
+class MERegression(nn.Module):
     def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[4,32,32,64,64,128], extended_prep_layer=True):
-        super(MERegression2, self).__init__()
+        super(MERegression, self).__init__()
 
         layers = []
         layers.append(nn.Conv2d(channels[0], channels[1], kernel_size=7, stride=2, padding=3, bias=(not extended_prep_layer)))
@@ -222,10 +221,21 @@ class MERegression2(nn.Module):
         x = self.linear(x)
         return x
 
-class MERegression3(nn.Module):
+class MERegressionResnet(nn.Module):
     def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[6,2,2,2,2]):
-        super(MERegression3, self).__init__()
+        super(MERegressionResnet, self).__init__()
         self.resnet = myresnet(output_dim=output_dim, batch_normalization=batch_normalization, channels=channels)
+        if use_cuda:
+            self.resnet = self.resnet.cuda()
+
+    def forward(self, x):
+        x = self.resnet(x)
+        return x
+
+class MERegressionResnetBig(nn.Module):
+    def __init__(self, output_dim=6, use_cuda=True, batch_normalization=True, channels=[6,2,2,2,2]):
+        super(MERegressionResnetBig, self).__init__()
+        self.resnet = myresnet_big(output_dim=output_dim, batch_normalization=batch_normalization, channels=channels)
         if use_cuda:
             self.resnet = self.resnet.cuda()
 
@@ -289,22 +299,22 @@ class CNNGeometric(nn.Module):
                 self.model_input_keys.append('grid')
                 self.siamese_input_keys.append('grid')
             
-            if feature_extraction_cnn == 'me_reg_4':
-                print('Using MERegression4 arch')
-                self.FeatureRegression = MERegression4(output_dim,
+            if feature_extraction_cnn == 'resnet_big':
+                print('Using ResNet with bottleneck arch')
+                self.FeatureRegression = MERegressionResnetBig(output_dim,
                                              use_cuda=self.use_cuda,
                                              channels=fr_channels,
                                              batch_normalization=batch_normalization)
                 
             elif feature_extraction_cnn == 'resnet':
                 print('Using ResNet arch')
-                self.FeatureRegression = MERegression3(output_dim,
+                self.FeatureRegression = MERegressionResnet(output_dim,
                                              use_cuda=self.use_cuda,
                                              channels=fr_channels,
                                              batch_normalization=batch_normalization)
             else:
-                print('Using MERegression2 arch')
-                self.FeatureRegression = MERegression2(output_dim,
+                print('Using my MERegression arch')
+                self.FeatureRegression = MERegression(output_dim,
                                              use_cuda=self.use_cuda,
                                              channels=fr_channels,
                                              batch_normalization=batch_normalization,
