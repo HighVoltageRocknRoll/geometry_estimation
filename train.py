@@ -232,7 +232,8 @@ def main():
 
     elif args.lr_scheduler == 'exp':
         is_cosine_scheduler = False
-        last_epoch /= max_batch_iters
+        if last_epoch > 0:
+            last_epoch /= max_batch_iters
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer,
                                                            gamma=args.lr_decay,
                                                            last_epoch=last_epoch)

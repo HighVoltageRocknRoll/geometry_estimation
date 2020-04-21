@@ -55,10 +55,14 @@ def calculate_all_diff(ref_table, newtable):
 
 RESULTS_DIR = r"C:\Users\22k_koz\Desktop\work\results"
 LOGDIR =  r"C:\Users\22k_koz\Desktop\work\logdir"
-MODEL_FN = "APR06_01"
+MODEL_FN = "APR14_03"
 
 def main():
-    with open(os.path.join(LOGDIR, MODEL_FN, 'stats.pkl'), 'rb') as f:
+    if RESULTS_DIR.find('merged') >= 0:
+        stats_fn = 'stats_merged.pkl'
+    else:
+        stats_fn = 'stats.pkl'
+    with open(os.path.join(LOGDIR, MODEL_FN, stats_fn), 'rb') as f:
         stats = pickle.load(f)
     mytable = pd.read_csv(os.path.join(RESULTS_DIR, 'all_pairs_3d.csv'))
     mystats = stats['affine_simple']
