@@ -43,12 +43,16 @@ def load_checkpoint(checkpoint_filename, model, optimizer, device):
         optimizer.load_state_dict(checkpoint['optimizer'])
         epoch = checkpoint['epoch']
         best_val_loss = checkpoint['best_val_loss']
+        # Deducing optimizer steps count
+        last_idx = optimizer.state_dict()['param_groups'][0]['params'][0]
+        last_epoch = optimizer.state_dict()['state'][last_idx]['step']
         print('Continue training from %d epoch' % epoch)
     else:
         epoch = 1
         best_val_loss = float("inf")
+        last_epoch = -1
 
-    return model, optimizer, epoch, best_val_loss
+    return model, optimizer, epoch, best_val_loss, last_epoch
 
 def main():
 
@@ -160,23 +164,8 @@ def main():
     dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size,
                                 shuffle=True, num_workers=4)
 
-    # Optimizer and eventual scheduler
+    # Optimizer
     optimizer = optim.Adam(model.FeatureRegression.parameters(), lr=args.lr)
-
-    if args.lr_scheduler == 'cosine':
-        
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
-                                                               T_max=args.lr_max_iter,
-                                                               eta_min=1e-7)
-    elif args.lr_scheduler == 'cosine_restarts':
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 
-                                                                         T_0=args.lr_max_iter, 
-                                                                         T_mult=2)
-    # elif args.lr_scheduler == 'step':
-        # step_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=0.1)
-        # scheduler = False
-    else:
-        scheduler = False
 
     # Train
 
@@ -225,7 +214,35 @@ def main():
     epoch_to_change_lr = int(args.lr_max_iter / max_batch_iters * 2 + 0.5)
 
     # Loading checkpoint
-    model, optimizer, start_epoch, best_val_loss = load_checkpoint(checkpoint_path, model, optimizer, device)
+    model, optimizer, start_epoch, best_val_loss, last_epoch = load_checkpoint(checkpoint_path, model, optimizer, device)
+    
+    # Scheduler
+    if args.lr_scheduler == 'cosine':
+        is_cosine_scheduler = True
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
+                                                               T_max=args.lr_max_iter,
+                                                               eta_min=1e-7,
+                                                               last_epoch=last_epoch)
+    elif args.lr_scheduler == 'cosine_restarts':
+        is_cosine_scheduler = True
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 
+                                                                         T_0=args.lr_max_iter, 
+                                                                         T_mult=2,
+                                                                         last_epoch=last_epoch)
+
+    elif args.lr_scheduler == 'exp':
+        is_cosine_scheduler = False
+        last_epoch /= max_batch_iters
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer,
+                                                           gamma=args.lr_decay,
+                                                           last_epoch=last_epoch)
+    # elif args.lr_scheduler == 'step':
+        # step_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=0.1)
+        # scheduler = False
+    else:
+        is_cosine_scheduler = False
+        scheduler = False
+
     for epoch in range(1, start_epoch):
         if args.lr_scheduler == 'cosine' and (epoch % epoch_to_change_lr == 0):
             scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
@@ -237,8 +254,13 @@ def main():
                   dataloader, pair_generation_tnf,
                   log_interval=args.log_interval,
                   scheduler=scheduler,
+                  is_cosine_scheduler=is_cosine_scheduler,
                   tb_writer=logs_writer,
                   visualize_loss=args.visualize_loss)
+        
+        # Step non-cosine scheduler
+        if scheduler and not is_cosine_scheduler:
+            scheduler.step()
 
         val_loss = validate_model(model, loss,
                                   dataloader_val, pair_generation_tnf,

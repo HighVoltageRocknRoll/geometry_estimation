@@ -14,5 +14,6 @@ trained_models/
 .idea
 test.ipynb
 test.py
+mda*
 *.sh
 april_runs.csv

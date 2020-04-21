@@ -8,7 +8,7 @@ def get_lr(optimizer):
 
 def train(epoch, model, loss_fn, optimizer,
           dataloader, pair_generation_tnf,
-          log_interval=50, tb_writer=None, scheduler=False, visualize_loss=False):
+          log_interval=50, tb_writer=None, scheduler=False, is_cosine_scheduler=False, visualize_loss=False):
     """
     Main function for training
 
@@ -41,7 +41,7 @@ def train(epoch, model, loss_fn, optimizer,
         loss.backward()
         optimizer.step()
 
-        if scheduler:
+        if is_cosine_scheduler:
             scheduler.step()
         if tb_writer:
             tb_writer.add_scalar('learning rate',
