@@ -177,7 +177,7 @@ class MEDataset(Dataset):
             _, h, w = mv_L2R.shape
             space_w = np.linspace(-1.0, 1.0, num=w)
             space_h = np.linspace(-1.0, 1.0, num=h)
-            grid = np.stack(*np.meshgrid(space_w, space_h), axis=0)
+            grid = np.stack(np.meshgrid(space_w, space_h))
 
             mv_L2R[0] /= w
             mv_L2R[1] /= h
