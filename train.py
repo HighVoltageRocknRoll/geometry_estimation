@@ -120,6 +120,7 @@ def main():
                         crop=args.crop_factor, 
                         use_conf=args.use_conf, 
                         use_random_patch=args.use_random_patch,
+                        normalize_inputs=args.normalize_inputs,
                         random_sample=args.random_sample)
 
         dataset_val = MEDataset(geometric_model=args.geometric_model, 
@@ -130,6 +131,7 @@ def main():
                         crop=args.crop_factor, 
                         use_conf=args.use_conf, 
                         use_random_patch=args.use_random_patch,
+                        normalize_inputs=args.normalize_inputs,
                         random_sample=args.random_sample)
 
     else:

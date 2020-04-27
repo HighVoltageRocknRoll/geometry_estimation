@@ -66,6 +66,7 @@ class ArgumentParser():
         me_params.add_argument('--crop-factor', type=float, default=0.2, help='Cropping after synthetic image warping')
         # Motion Vectors confidence
         me_params.add_argument('--use-random-patch', type=str_to_bool, nargs='?', const=True, default=False, help='use random cropped patch of input instead of full')
+        me_params.add_argument('--normalize-inputs', type=str_to_bool, nargs='?', const=True, default=False, help='normalize mv and grid to [-1,1]')
         
 
     def add_synth_dataset_parameters(self):

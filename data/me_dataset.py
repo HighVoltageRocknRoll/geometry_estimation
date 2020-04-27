@@ -101,6 +101,7 @@ class MEDataset(Dataset):
                  crop,
                  use_conf,
                  use_random_patch,
+                 normalize_inputs,
                  geometric_model='affine_simple_4', 
                  random_sample=True):
     
@@ -108,6 +109,7 @@ class MEDataset(Dataset):
         self.csv = pd.read_csv(os.path.join(dataset_csv_path, dataset_csv_file))
         self.random_sample = random_sample
         self.use_random_patch = use_random_patch
+        self.normalize_inputs = normalize_inputs
 
         h_cropped = int(input_height - input_height*crop)
         w_cropped = int(input_width - input_width*crop)
@@ -171,20 +173,17 @@ class MEDataset(Dataset):
 
         grid = self.grid
 
-        if self.use_random_patch:
-            patch_h, patch_w = 100, 100
+        if self.normalize_inputs:
             _, h, w = mv_L2R.shape
-            h_off = np.random.randint(0, h - patch_h)
-            w_off = np.random.randint(0, w - patch_w)
-            def mycrop(np_array):
-                return np_array[:, h_off:h_off+patch_h, w_off:w_off+patch_w]
-            
-            mv_L2R = mycrop(mv_L2R)
-            mv_R2L = mycrop(mv_R2L)
-            grid = mycrop(grid)
-            if self.use_conf:
-                conf_L = mycrop(conf_L)
-                conf_R = mycrop(conf_R)
+            space_w = np.linspace(-1.0, 1.0, num=w)
+            space_h = np.linspace(-1.0, 1.0, num=h)
+            grid = np.stack(*np.meshgrid(space_w, space_h), axis=0)
+
+            mv_L2R[0] /= w
+            mv_L2R[1] /= h
+
+            mv_R2L[0] /= w
+            mv_R2L[1] /= h
 
         # make arrays float tensor for subsequent processing
         grid_L2R = torch.Tensor((grid + mv_L2R).astype(np.float32))
