@@ -179,11 +179,11 @@ class MEDataset(Dataset):
             space_h = np.linspace(-1.0, 1.0, num=h)
             grid = np.stack(np.meshgrid(space_w, space_h))
 
-            mv_L2R[0] /= w
-            mv_L2R[1] /= h
+            mv_L2R[0] /= w/2
+            mv_L2R[1] /= h/2
 
-            mv_R2L[0] /= w
-            mv_R2L[1] /= h
+            mv_R2L[0] /= w/2
+            mv_R2L[1] /= h/2
 
         # make arrays float tensor for subsequent processing
         grid_L2R = torch.Tensor((grid + mv_L2R).astype(np.float32))
