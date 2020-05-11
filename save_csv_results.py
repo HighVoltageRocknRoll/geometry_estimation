@@ -53,9 +53,9 @@ def calculate_all_diff(ref_table, newtable):
         print()
 
 
-RESULTS_DIR = r"C:\Users\22k_koz\Desktop\work\results"
+RESULTS_DIR = r"C:\Users\22k_koz\Desktop\work\merged_results"
 LOGDIR =  r"C:\Users\22k_koz\Desktop\work\logdir"
-MODEL_FN = "APR27_01"
+MODEL_FN = "MAY09_02"
 
 def main():
     if RESULTS_DIR.find('merged') >= 0:
