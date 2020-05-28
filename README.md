@@ -2,7 +2,7 @@
 
 ![](http://www.di.ens.fr/willow/research/cnngeometric/images/code_teaser.png)
 
-This is the implementation of the paper: 
+This is BASED on the implementation of the paper: 
 
 I. Rocco, R. Arandjelović and J. Sivic. Convolutional neural network architecture for geometric matching. [[website](http://www.di.ens.fr/willow/research/cnngeometric/)][[CVPR version](https://arxiv.org/abs/1703.05593)][[Extended TPAMI version](https://hal.archives-ouvertes.fr/hal-01859616/file/cnngeometric_pami.pdf)]
 
