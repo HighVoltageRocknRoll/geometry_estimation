@@ -251,7 +251,8 @@ def main():
             scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
 
     for epoch in range(start_epoch, args.num_epochs+1):
-
+        print('Current epoch: ', epoch)
+        
         # we don't need the average epoch loss so we assign it to _
         _ = train(epoch, model, loss, optimizer,
                   dataloader, pair_generation_tnf,
