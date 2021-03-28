@@ -262,8 +262,7 @@ def main():
                   log_interval=args.log_interval,
                   scheduler=scheduler,
                   is_cosine_scheduler=is_cosine_scheduler,
-                  tb_writer=logs_writer,
-                  visualize_loss=args.visualize_loss)
+                  tb_writer=logs_writer)
         
         # Step non-cosine scheduler
         if scheduler and not is_cosine_scheduler:

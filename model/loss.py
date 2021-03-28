@@ -53,6 +53,7 @@ class SequentialGridLoss(nn.Module):
         P = np.concatenate((X, Y), axis=1)
         self.P = torch.tensor(P, dtype=torch.float32, requires_grad=False)
         self.pointTnf = PointTnf(use_cuda=use_cuda)
+        self.weights = torch.tensor([5000.0, 3000.0, 3000.0], requires_grad=False)
         if use_cuda:
             self.P = self.P.cuda()
 
@@ -81,7 +82,7 @@ class SequentialGridLoss(nn.Module):
         shift_mat_GT = get_shift_y_matrix(theta_GT[:, 2])
         loss_shift, P_shift, P_shift_GT = self.warp_and_mse(shift_mat, shift_mat_GT, P_scale, P_scale_GT)
 
-        return loss_rotate, loss_scale, loss_shift
+        return self.weights[0] * loss_rotate + self.weights[1] * loss_scale + self.weights[2] * loss_shift
 
 class WeightedMSELoss(nn.Module):
     def __init__(self, use_cuda=True):
@@ -105,24 +106,11 @@ class SplitLoss(nn.Module):
         self.scale_mse = nn.MSELoss()
         self.shift_mse = nn.MSELoss()
 
+        self.weighted_mse = WeightedMSELoss(use_cuda=use_cuda)
         self.sequential_grid = SequentialGridLoss(use_cuda=use_cuda, grid_size=grid_size)
 
-        self.weight = torch.tensor([1.0, 10000.0, 10000.0, 5000.0, 3000.0, 3000.0], requires_grad=False)
-        self.saved_values = torch.zeros_like(self.weight)
-        if use_cuda:
-            self.weight = self.weight.cuda()
-            self.saved_values = self.saved_values.cuda()
-
     def forward(self, theta, theta_GT):
-        split_loss = torch.stack((
-            self.rotate_mse(theta[:, 0], theta_GT[:, 0]),
-            self.scale_mse(theta[:, 1], theta_GT[:, 1]),
-            self.shift_mse(theta[:, 2], theta_GT[:, 2]),
-            *self.sequential_grid(theta, theta_GT)
-        ))
-        split_loss *= self.weight
-        self.saved_values = split_loss.clone().detach()
-        loss = torch.sum(split_loss)
+        loss = self.weighted_mse(theta, theta_GT) + self.sequential_grid(theta, theta_GT)
         
         if theta.size(1) > 4:
             loss += self.rotate_mse(theta[:, 0], theta[:, 3]) * self.weight[0] + \

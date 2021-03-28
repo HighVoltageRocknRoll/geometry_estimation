@@ -99,7 +99,6 @@ class ArgumentParser():
         train_params.add_argument('--seed', type=int, default=1, help='Pseudo-RNG seed')
         train_params.add_argument('--loss', type=str, nargs='?', default='split',
                                   help='Train loss {mse, weighted_mse, grid, mixed, split}')
-        train_params.add_argument('--visualize-loss', type=str_to_bool, nargs='?', const=True, default=True, help='additional tb log with all loss parts')
         train_params.add_argument('--geometric-model', type=str, default='affine', help='affine/hom/tps')
         # Trained model parameters
         train_params.add_argument('--trained-model-fn', type=str, default='checkpoint_adam', help='trained model filename')

@@ -8,7 +8,7 @@ def get_lr(optimizer):
 
 def train(epoch, model, loss_fn, optimizer,
           dataloader, pair_generation_tnf,
-          log_interval=50, tb_writer=None, scheduler=False, is_cosine_scheduler=False, visualize_loss=False):
+          log_interval=50, tb_writer=None, scheduler=False, is_cosine_scheduler=False):
     """
     Main function for training
 
@@ -58,17 +58,6 @@ def train(epoch, model, loss_fn, optimizer,
                 tb_writer.add_scalar('training loss',
                                      loss.data.item(),
                                      (epoch - 1) * len(dataloader) + batch_idx)
-                if visualize_loss:
-                    tb_writer.add_scalars('split train loss',
-                                          {
-                                              'rotate_mse': loss_fn.saved_values[0],
-                                              'scale_mse': loss_fn.saved_values[1],
-                                              'shift_mse': loss_fn.saved_values[2],
-                                              'rotate_grid': loss_fn.saved_values[3],
-                                              'scale_grid': loss_fn.saved_values[4],
-                                              'shift_grid': loss_fn.saved_values[5]
-                                          },
-                                          (epoch - 1) * len(dataloader) + batch_idx)
 
     train_loss /= len(dataloader)
     print('Train set: Average loss: {:.8f}'.format(train_loss))
