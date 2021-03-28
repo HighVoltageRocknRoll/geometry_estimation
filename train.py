@@ -10,8 +10,8 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from model.cnn_geometric_model import CNNGeometric
-from model.loss_old import TransformedGridLoss, MixedLoss
-from model.loss import WeightedMSELoss, SplitLoss
+from model.loss_old import MixedLoss
+from model.loss import WeightedMSELoss, SplitLoss, SequentialGridLoss
 
 from data.synth_dataset import SynthDataset
 from data.me_dataset import MEDataset
@@ -93,7 +93,6 @@ def main():
     if args.loss == 'split':
         print('Using Split loss')
         loss = SplitLoss(use_cuda=use_cuda,
-                         geometric_model=args.geometric_model,
                          grid_size=20)
     elif args.loss == 'mixed':
         print('Using grid+MSE loss...')
@@ -108,8 +107,7 @@ def main():
         loss = WeightedMSELoss(use_cuda=use_cuda)
     elif args.loss == 'grid':
         print('Using grid loss...')
-        loss = TransformedGridLoss(use_cuda=use_cuda,
-                                   geometric_model=args.geometric_model)
+        loss = SequentialGridLoss(use_cuda=use_cuda)
     else:
         raise NotImplementedError('Specifyed loss %s is not supported' % args.loss)
 

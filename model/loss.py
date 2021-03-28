@@ -99,7 +99,7 @@ class WeightedMSELoss(nn.Module):
                                       for i in range(len(self.weights))]))
 
 class SplitLoss(nn.Module):
-    def __init__(self, geometric_model='affine_simple', use_cuda=True, grid_size=20):
+    def __init__(self, use_cuda=True, grid_size=20):
         super(SplitLoss, self).__init__()
 
         self.rotate_mse = nn.MSELoss()
