@@ -56,6 +56,7 @@ class SequentialGridLoss(nn.Module):
         self.weights = torch.tensor([5000.0, 3000.0, 3000.0], requires_grad=False)
         if use_cuda:
             self.P = self.P.cuda()
+            self.weights = self.weights.cuda()
 
     def warp_and_mse(self, mat, mat_GT, P, P_GT):
         P_warp = self.pointTnf.affPointTnf(mat, P)
