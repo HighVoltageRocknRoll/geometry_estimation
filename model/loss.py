@@ -85,6 +85,8 @@ class SequentialGridLoss(nn.Module):
 
 class WeightedMSELoss(nn.Module):
     def __init__(self, use_cuda=True):
+        super(WeightedMSELoss, self).__init__()
+
         self.mse = nn.MSELoss()
         self.weights = torch.tensor([1.0, 10000.0, 10000.0], requires_grad=False)
         self.saved_values = torch.zeros_like(self.weights)
