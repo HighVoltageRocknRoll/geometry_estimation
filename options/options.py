@@ -97,7 +97,8 @@ class ArgumentParser():
         train_params.add_argument('--num-epochs', type=int, default=20, help='number of training epochs')
         train_params.add_argument('--batch-size', type=int, default=16, help='training batch size')
         train_params.add_argument('--seed', type=int, default=1, help='Pseudo-RNG seed')
-        train_params.add_argument('--loss', type=str, nargs='?', default='split', help='Train loss {mse, grid, mixed, split}')   
+        train_params.add_argument('--loss', type=str, nargs='?', default='split',
+                                  help='Train loss {mse, weighted_mse, grid, mixed, split}')
         train_params.add_argument('--visualize-loss', type=str_to_bool, nargs='?', const=True, default=True, help='additional tb log with all loss parts')
         train_params.add_argument('--geometric-model', type=str, default='affine', help='affine/hom/tps')
         # Trained model parameters

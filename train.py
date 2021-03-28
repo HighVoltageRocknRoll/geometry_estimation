@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from model.cnn_geometric_model import CNNGeometric
 from model.loss_old import TransformedGridLoss, MixedLoss
-from model.loss import SplitLoss
+from model.loss import WeightedMSELoss, SplitLoss
 
 from data.synth_dataset import SynthDataset
 from data.me_dataset import MEDataset
@@ -103,6 +103,9 @@ def main():
     elif args.loss == 'mse':
         print('Using MSE loss...')
         loss = nn.MSELoss()
+    elif args.loss == 'weighted_mse':
+        print('Using weighted MSE loss...')
+        loss = WeightedMSELoss(use_cuda=use_cuda)
     elif args.loss == 'grid':
         print('Using grid loss...')
         loss = TransformedGridLoss(use_cuda=use_cuda,
@@ -252,7 +255,7 @@ def main():
 
     for epoch in range(start_epoch, args.num_epochs+1):
         print('Current epoch: ', epoch)
-        
+
         # we don't need the average epoch loss so we assign it to _
         _ = train(epoch, model, loss, optimizer,
                   dataloader, pair_generation_tnf,

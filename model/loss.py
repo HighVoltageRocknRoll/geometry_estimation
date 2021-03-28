@@ -83,6 +83,18 @@ class SequentialGridLoss(nn.Module):
 
         return loss_rotate, loss_scale, loss_shift
 
+class WeightedMSELoss(nn.Module):
+    def __init__(self, use_cuda=True):
+        self.mse = nn.MSELoss()
+        self.weights = torch.tensor([1.0, 10000.0, 10000.0], requires_grad=False)
+        self.saved_values = torch.zeros_like(self.weights)
+        if use_cuda:
+            self.weights = self.weights.cuda()
+
+    def forward(self, theta, theta_GT):
+        return torch.sum(torch.stack([self.weights[i] * self.mse(theta[:, i], theta_GT[:, i])
+                                      for i in range(len(self.weights))]))
+
 class SplitLoss(nn.Module):
     def __init__(self, geometric_model='affine_simple', use_cuda=True, grid_size=20):
         super(SplitLoss, self).__init__()
