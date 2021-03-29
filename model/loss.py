@@ -91,7 +91,6 @@ class WeightedMSELoss(nn.Module):
 
         self.mse = nn.MSELoss()
         self.weights = torch.tensor([1.0, 10000.0, 10000.0], requires_grad=False)
-        self.saved_values = torch.zeros_like(self.weights)
         if use_cuda:
             self.weights = self.weights.cuda()
 
@@ -110,12 +109,16 @@ class SplitLoss(nn.Module):
         self.weighted_mse = WeightedMSELoss(use_cuda=use_cuda)
         self.sequential_grid = SequentialGridLoss(use_cuda=use_cuda, grid_size=grid_size)
 
+        self.weights = torch.tensor([1.0, 10000.0, 10000.0], requires_grad=False)
+        if use_cuda:
+            self.weights = self.weights.cuda()
+
     def forward(self, theta, theta_GT):
         loss = self.weighted_mse(theta, theta_GT) + self.sequential_grid(theta, theta_GT)
         
         if theta.size(1) > 4:
-            loss += self.rotate_mse(theta[:, 0], theta[:, 3]) * self.weight[0] + \
-               self.scale_mse(theta[:, 1], theta[:, 4]) * self.weight[1] + \
-               self.shift_mse(theta[:, 2], theta[:, 5]) * self.weight[2]
+            loss += self.rotate_mse(theta[:, 0], theta[:, 3]) * self.weights[0] + \
+               self.scale_mse(theta[:, 1], theta[:, 4]) * self.weights[1] + \
+               self.shift_mse(theta[:, 2], theta[:, 5]) * self.weights[2]
                    
         return loss
