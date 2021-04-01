@@ -35,7 +35,7 @@ class ArgumentParser():
         model_params.add_argument('--me-main-input', type=str, default='disparity', help='main inputs to model: {disparity, grid, both}') 
         model_params.add_argument('--use-backward-input', type=str_to_bool, nargs='?', const=True, default=False, help='add backward (right-to-left) main inputs')  
         model_params.add_argument('--use-conf', type=str_to_bool, nargs='?', const=True, default=False, help='add confidence to Motion Vectors as input channel')  
-        model_params.add_argument('--grid-input', type=str_to_bool, nargs='?', const=True, default=False, help='add identity grid coordinates as input channel')  
+        model_params.add_argument('--grid-input', type=str_to_bool, nargs='?', const=True, default=False, help='add identity grid coordinates as input channel')
           
          
     def add_base_train_parameters(self):

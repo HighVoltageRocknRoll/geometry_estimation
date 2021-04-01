@@ -2,6 +2,7 @@ from __future__ import print_function, division
 import argparse
 import os
 from glob import glob
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -11,7 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from model.cnn_geometric_model import CNNGeometric
 from model.loss_old import MixedLoss
-from model.loss import WeightedMSELoss, SplitLoss, SequentialGridLoss
+from model.loss import WeightedMSELoss, SequentialGridLoss, ReconstructionLoss, SplitLoss
 
 from data.synth_dataset import SynthDataset
 from data.me_dataset import MEDataset
@@ -90,6 +91,7 @@ def main():
     except:
         model.FeatureRegression.resnet.fc.bias.data += init_theta
 
+    args.load_images = False
     if args.loss == 'split':
         print('Using Split loss')
         loss = SplitLoss(use_cuda=use_cuda,
@@ -105,6 +107,13 @@ def main():
     elif args.loss == 'weighted_mse':
         print('Using weighted MSE loss...')
         loss = WeightedMSELoss(use_cuda=use_cuda)
+    elif args.loss == 'reconstruction':
+        print('Using reconstruction loss...')
+        loss = ReconstructionLoss(int(np.rint(args.input_width * (1 - args.crop_factor) / 16) * 16),
+                                  int(np.rint(args.input_height * (1 - args.crop_factor) / 16) * 16),
+                                  args.input_height,
+                                  use_cuda=use_cuda)
+        args.load_images = True
     elif args.loss == 'grid':
         print('Using grid loss...')
         loss = SequentialGridLoss(use_cuda=use_cuda)
@@ -122,7 +131,8 @@ def main():
                         use_conf=args.use_conf, 
                         use_random_patch=args.use_random_patch,
                         normalize_inputs=args.normalize_inputs,
-                        random_sample=args.random_sample)
+                        random_sample=args.random_sample,
+                        load_images=args.load_images)
 
         dataset_val = MEDataset(geometric_model=args.geometric_model, 
                         dataset_csv_path=args.dataset_csv_path, 
@@ -133,7 +143,8 @@ def main():
                         use_conf=args.use_conf, 
                         use_random_patch=args.use_random_patch,
                         normalize_inputs=args.normalize_inputs,
-                        random_sample=args.random_sample)
+                        random_sample=args.random_sample,
+                        load_images=args.load_images)
 
     else:
 
@@ -198,6 +209,8 @@ def main():
             'conf_L': torch.rand([args.batch_size, 1, 216, 384], device = device),
             'conf_R': torch.rand([args.batch_size, 1, 216, 384], device = device),
             'theta_GT': torch.rand([args.batch_size, 4], device = device),
+            'img_R_orig': torch.rand([args.batch_size, 1, 216, 384], device=device),
+            'img_R': torch.rand([args.batch_size, 1, 216, 384], device=device),
         }
 
     else:

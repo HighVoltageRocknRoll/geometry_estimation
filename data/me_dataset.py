@@ -103,7 +103,8 @@ class MEDataset(Dataset):
                  use_random_patch,
                  normalize_inputs,
                  geometric_model='affine_simple_4', 
-                 random_sample=True):
+                 random_sample=True,
+                 load_images=False):
     
         # read csv file
         self.csv = pd.read_csv(os.path.join(dataset_csv_path, dataset_csv_file))
@@ -137,6 +138,7 @@ class MEDataset(Dataset):
         self.geometric_model = geometric_model
         self.use_conf = use_conf
         self.crop = crop
+        self.load_images = load_images
 
     def __len__(self):
         return len(self.csv)
@@ -154,6 +156,12 @@ class MEDataset(Dataset):
                     conf_L = conf_L[None, ...]
                 if conf_R.ndim == 2:
                     conf_R = conf_R[None, ...]
+            if self.load_images:
+                img_R_orig = io.imread(os.path.join(
+                    self.dataset_path, 'images',
+                    '.'.join(['_'.join(self.mv_names[idx].split('.')[0].split('_')[:-1] + ['0']), 'png'])))
+                img_R = io.imread(os.path.join(self.dataset_path,  'images',
+                                               '.'.join([self.mv_names[idx].split('.')[0], 'png'])))
             theta = self.theta[idx, :]
         else:
             if self.use_conf:
@@ -208,5 +216,11 @@ class MEDataset(Dataset):
             conf_R = torch.Tensor(conf_R.astype(np.float32))
             sample['conf_L'] = conf_L
             sample['conf_R'] = conf_R
+
+        if self.load_images:
+            img_R_orig = torch.Tensor(img_R_orig.astype(np.float32) / 255.0)
+            img_R = torch.Tensor(img_R.astype(np.float32) / 255.0)
+            sample['img_R_orig'] = torch.unsqueeze(img_R_orig, dim=0)
+            sample['img_R'] = torch.unsqueeze(img_R, dim=0)
 
         return sample

@@ -6,6 +6,8 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from geotnf.point_tnf import PointTnf
 from geotnf.transformation import affine_mat_from_simple
+from torch.nn.functional import grid_sample, affine_grid
+
 
 def get_rotate_matrix(theta):
     cos_alpha = torch.cos(theta / 180.0 * np.pi)
@@ -17,12 +19,14 @@ def get_rotate_matrix(theta):
         sin_alpha, cos_alpha, zero
     ), dim=1)
 
+
 def get_scale_matrix(theta):
     zero = torch.zeros_like(theta, requires_grad=False)
     return torch.stack((
         theta, zero, zero,
         zero, theta, zero
     ), dim=1)
+
 
 def get_shift_y_matrix(theta):
     one = torch.ones_like(theta, requires_grad=False)
@@ -32,14 +36,37 @@ def get_shift_y_matrix(theta):
         zero, one, theta
     ), dim=1)
 
-def get_vqmt3d_matrix(rotate_angle, scale_val):
-    cos_alpha = scale_val
-    sin_alpha = torch.sin(rotate_angle / 180.0 * np.pi)
-    zero = torch.zeros_like(rotate_angle, requires_grad=False)
+
+def get_cv_matrix(center, theta):
+    angle = theta[:, 0] / 180.0 * np.pi
+    alpha = theta[:, 1] * torch.cos(angle)
+    beta = theta[:, 1] * torch.sin(angle)
+    t_x = (1.0 - alpha) * center[0] - beta * center[1]
+    t_y = beta * center[0] + (1.0 - alpha) * center[1] + theta[:, 2]
+
     return torch.stack((
-        cos_alpha, -sin_alpha, zero,
-        sin_alpha, cos_alpha, zero
+        alpha, beta, t_x,
+        -beta, alpha, t_y
     ), dim=1)
+
+
+def normalize_transform(transform, width, height):
+    one = torch.ones_like(transform[:, 0], requires_grad=False)
+    zero = torch.zeros_like(transform[:, 0], requires_grad=False)
+    transform_sqr = torch.stack([*transform.unbind(dim=1),
+                                 zero, zero, one], dim=1).reshape(-1, 3, 3)
+    inv_transform = torch.inverse(transform_sqr)
+
+    norm_transform = torch.zeros_like(transform)
+    norm_transform[:, 0] = inv_transform[:, 0, 0]
+    norm_transform[:, 1] = inv_transform[:, 0, 1] * height / width
+    norm_transform[:, 2] = inv_transform[:, 0, 2] * 2 / width + norm_transform[:, 0] + norm_transform[:, 1] - 1.0
+    norm_transform[:, 3] = inv_transform[:, 1, 0] * width / height
+    norm_transform[:, 4] = inv_transform[:, 1, 1]
+    norm_transform[:, 5] = inv_transform[:, 1, 2] * 2 / height + norm_transform[:, 3] + norm_transform[:, 4] - 1.0
+
+    return norm_transform
+
 
 class SequentialGridLoss(nn.Module):
     def __init__(self, use_cuda=True, grid_size=20):
@@ -85,6 +112,7 @@ class SequentialGridLoss(nn.Module):
 
         return self.weights[0] * loss_rotate + self.weights[1] * loss_scale + self.weights[2] * loss_shift
 
+
 class WeightedMSELoss(nn.Module):
     def __init__(self, use_cuda=True):
         super(WeightedMSELoss, self).__init__()
@@ -97,6 +125,35 @@ class WeightedMSELoss(nn.Module):
     def forward(self, theta, theta_GT):
         return torch.sum(torch.stack([self.weights[i] * self.mse(theta[:, i], theta_GT[:, i])
                                       for i in range(len(self.weights))]))
+
+
+class ReconstructionLoss(nn.Module):
+    def __init__(self, width, height, shift_norm, p=1, use_cuda=True):
+        super(ReconstructionLoss, self).__init__()
+        self.width = width
+        self.height = height
+        self.shift_norm = shift_norm
+        self.p = p
+        self.EPS = 1e-16
+        self.mask = torch.ones((1, height, width), dtype=torch.float32)
+        if use_cuda:
+            self.mask = self.mask.cuda()
+
+    def forward(self, theta, img_R, img_R_orig):
+        theta[:, 2] = self.shift_norm * theta[:, 2]
+        cv_transform = get_cv_matrix((self.width // 2, self.height // 2), theta)
+        transform = normalize_transform(cv_transform, self.width, self.height)
+        grid = affine_grid(transform.reshape(-1, 2, 3), img_R.shape, align_corners=True)
+        warped_img_R_orig = grid_sample(img_R_orig, grid, align_corners=True)
+        mask = self.mask.expand(img_R.shape[0], *self.mask.shape)
+        warped_mask = grid_sample(mask, grid, align_corners=True)
+        warped_mask = warped_mask[:, 0, :, :]
+
+        losses = (torch.sum(warped_mask * torch.norm(img_R - warped_img_R_orig, p=self.p, dim=1),
+                            dim=[1, 2]) + self.EPS) / (torch.sum(warped_mask, dim=[1, 2]) + self.EPS)
+
+        return torch.mean(losses)
+
 
 class SplitLoss(nn.Module):
     def __init__(self, use_cuda=True, grid_size=20):

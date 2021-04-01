@@ -35,6 +35,8 @@ def train(epoch, model, loss_fn, optimizer,
         if loss_fn._get_name() == 'MSELoss':
             batch_size = theta.shape[0]
             loss = loss_fn(theta, tnf_batch['theta_GT'].view(batch_size,-1))
+        elif loss_fn._get_name() == 'ReconstructionLoss':
+            loss = loss_fn(theta, tnf_batch['img_R'], tnf_batch['img_R_orig'])
         else:
             loss = loss_fn(theta, tnf_batch['theta_GT'])
 
@@ -77,6 +79,8 @@ def validate_model(model, loss_fn,
         if loss_fn._get_name() == 'MSELoss':
             batch_size = theta.shape[0]
             loss = loss_fn(theta, tnf_batch['theta_GT'].view(batch_size,-1))
+        elif loss_fn._get_name() == 'ReconstructionLoss':
+            loss = loss_fn(theta, tnf_batch['img_R'], tnf_batch['img_R_orig'])
         else:
             loss = loss_fn(theta, tnf_batch['theta_GT'])
 
