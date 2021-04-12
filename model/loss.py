@@ -37,12 +37,12 @@ def get_shift_y_matrix(theta):
     ), dim=1)
 
 
-def get_cv_matrix(center, theta):
-    angle = theta[:, 0] / 180.0 * np.pi
-    alpha = theta[:, 1] * torch.cos(angle)
-    beta = theta[:, 1] * torch.sin(angle)
+def get_cv_matrix(center, angle, scale, shift):
+    angle = angle / 180.0 * np.pi
+    alpha = scale * torch.cos(angle)
+    beta = scale * torch.sin(angle)
     t_x = (1.0 - alpha) * center[0] - beta * center[1]
-    t_y = beta * center[0] + (1.0 - alpha) * center[1] + theta[:, 2]
+    t_y = beta * center[0] + (1.0 - alpha) * center[1] + shift
 
     return torch.stack((
         alpha, beta, t_x,
@@ -80,10 +80,9 @@ class SequentialGridLoss(nn.Module):
         P = np.concatenate((X, Y), axis=1)
         self.P = torch.tensor(P, dtype=torch.float32, requires_grad=False)
         self.pointTnf = PointTnf(use_cuda=use_cuda)
-        self.weights = torch.tensor([5000.0, 3000.0, 3000.0], requires_grad=False)
+        self.weights = [5000.0, 3000.0, 3000.0]
         if use_cuda:
             self.P = self.P.cuda()
-            self.weights = self.weights.cuda()
 
     def warp_and_mse(self, mat, mat_GT, P, P_GT):
         P_warp = self.pointTnf.affPointTnf(mat, P)
@@ -118,9 +117,7 @@ class WeightedMSELoss(nn.Module):
         super(WeightedMSELoss, self).__init__()
 
         self.mse = nn.MSELoss()
-        self.weights = torch.tensor([1.0, 10000.0, 10000.0], requires_grad=False)
-        if use_cuda:
-            self.weights = self.weights.cuda()
+        self.weights = [1.0, 10000.0, 10000.0]
 
     def forward(self, theta, theta_GT):
         return torch.sum(torch.stack([self.weights[i] * self.mse(theta[:, i], theta_GT[:, i])
@@ -134,14 +131,15 @@ class ReconstructionLoss(nn.Module):
         self.height = height
         self.shift_norm = shift_norm
         self.p = p
+        self.weight = 10.0
         self.EPS = 1e-16
-        self.mask = torch.ones((1, height, width), dtype=torch.float32)
+        self.mask = torch.ones((1, height, width), dtype=torch.float32, requires_grad=False)
         if use_cuda:
             self.mask = self.mask.cuda()
 
     def forward(self, theta, img_R, img_R_orig):
-        theta[:, 2] = self.shift_norm * theta[:, 2]
-        cv_transform = get_cv_matrix((self.width // 2, self.height // 2), theta)
+        cv_transform = get_cv_matrix((self.width // 2, self.height // 2),
+                                     theta[:, 0], theta[:, 1], self.shift_norm * theta[:, 2])
         transform = normalize_transform(cv_transform, self.width, self.height)
         grid = affine_grid(transform.reshape(-1, 2, 3), img_R.shape, align_corners=True)
         warped_img_R_orig = grid_sample(img_R_orig, grid, align_corners=True)
@@ -149,10 +147,51 @@ class ReconstructionLoss(nn.Module):
         warped_mask = grid_sample(mask, grid, align_corners=True)
         warped_mask = warped_mask[:, 0, :, :]
 
-        losses = (torch.sum(warped_mask * torch.norm(img_R - warped_img_R_orig, p=self.p, dim=1),
-                            dim=[1, 2]) + self.EPS) / (torch.sum(warped_mask, dim=[1, 2]) + self.EPS)
+        losses = self.weight * (torch.sum(warped_mask * torch.norm(img_R - warped_img_R_orig, p=self.p, dim=1),
+                                          dim=[1, 2]) + self.EPS) / (torch.sum(warped_mask, dim=[1, 2]) + self.EPS)
 
         return torch.mean(losses)
+
+
+class CombinedLoss(nn.Module):
+    def __init__(self, args, use_cuda=True):
+        super(CombinedLoss, self).__init__()
+
+        if args.use_weighted_mse_loss:
+            self.weighted_mse = WeightedMSELoss(use_cuda=use_cuda)
+        else:
+            self.weighted_mse = None
+
+        if args.use_grid_loss:
+            self.sequential_grid = SequentialGridLoss(use_cuda=use_cuda)
+        else:
+            self.sequential_grid = None
+
+        if args.use_reconstruction_loss:
+            self.reconstruction = ReconstructionLoss(int(np.rint(args.input_width * (1 - args.crop_factor) / 16) * 16),
+                                                     int(np.rint(args.input_height * (1 - args.crop_factor) / 16) * 16),
+                                                     args.input_height,
+                                                     use_cuda=use_cuda)
+        else:
+            self.reconstruction = None
+
+    def forward(self, theta, theta_GT, img_R=None, img_R_orig=None):
+        loss_parts = dict()
+        loss = 0.0
+        if self.weighted_mse is not None:
+            weighted_mse_loss = self.weighted_mse(theta, theta_GT)
+            loss_parts['weighted_mse'] = weighted_mse_loss.clone().detach()
+            loss += weighted_mse_loss
+        if self.sequential_grid is not None:
+            sequential_grid_loss = self.sequential_grid(theta, theta_GT)
+            loss_parts['sequential_grid'] = sequential_grid_loss.clone().detach()
+            loss += sequential_grid_loss
+        if self.reconstruction is not None:
+            reconstruction_loss = self.reconstruction(theta, img_R, img_R_orig)
+            loss_parts['reconstruction'] = reconstruction_loss.clone().detach()
+            loss += reconstruction_loss
+
+        return loss, loss_parts
 
 
 class SplitLoss(nn.Module):

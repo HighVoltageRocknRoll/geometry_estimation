@@ -11,8 +11,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from model.cnn_geometric_model import CNNGeometric
-from model.loss_old import MixedLoss
-from model.loss import WeightedMSELoss, SequentialGridLoss, ReconstructionLoss, SplitLoss
+from model.loss import WeightedMSELoss, SequentialGridLoss, ReconstructionLoss, SplitLoss, CombinedLoss
 
 from data.synth_dataset import SynthDataset
 from data.me_dataset import MEDataset
@@ -96,11 +95,6 @@ def main():
         print('Using Split loss')
         loss = SplitLoss(use_cuda=use_cuda,
                          grid_size=20)
-    elif args.loss == 'mixed':
-        print('Using grid+MSE loss...')
-        loss = MixedLoss(alpha=1000,
-                         use_cuda=use_cuda, 
-                         geometric_model=args.geometric_model)
     elif args.loss == 'mse':
         print('Using MSE loss...')
         loss = nn.MSELoss()
@@ -114,6 +108,11 @@ def main():
                                   args.input_height,
                                   use_cuda=use_cuda)
         args.load_images = True
+    elif args.loss == 'combined':
+        print('Using combined loss...')
+        loss = CombinedLoss(args, use_cuda=use_cuda)
+        if args.use_reconstruction_loss:
+            args.load_images = True
     elif args.loss == 'grid':
         print('Using grid loss...')
         loss = SequentialGridLoss(use_cuda=use_cuda)
@@ -209,10 +208,10 @@ def main():
             'conf_L': torch.rand([args.batch_size, 1, 216, 384], device = device),
             'conf_R': torch.rand([args.batch_size, 1, 216, 384], device = device),
             'theta_GT': torch.rand([args.batch_size, 4], device = device),
-            'img_R_orig': torch.rand([args.batch_size, 1, 216, 384], device=device),
-            'img_R': torch.rand([args.batch_size, 1, 216, 384], device=device),
         }
-
+        if args.load_images:
+            dummy_input['img_R_orig'] = torch.rand([args.batch_size, 1, 216, 384], device=device)
+            dummy_input['img_R'] = torch.rand([args.batch_size, 1, 216, 384], device=device)
     else:
         dummy_input = {'source_image': torch.rand([args.batch_size, 3, 240, 240], device = device),
                        'target_image': torch.rand([args.batch_size, 3, 240, 240], device = device),
@@ -264,6 +263,7 @@ def main():
         if args.lr_scheduler == 'cosine' and (epoch % epoch_to_change_lr == 0):
             scheduler.state_dict()['base_lrs'][0] *= args.lr_decay
 
+    torch.autograd.set_detect_anomaly(True)
     for epoch in range(start_epoch, args.num_epochs+1):
         print('Current epoch: ', epoch)
 

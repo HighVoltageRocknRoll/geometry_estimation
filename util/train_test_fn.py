@@ -37,6 +37,15 @@ def train(epoch, model, loss_fn, optimizer,
             loss = loss_fn(theta, tnf_batch['theta_GT'].view(batch_size,-1))
         elif loss_fn._get_name() == 'ReconstructionLoss':
             loss = loss_fn(theta, tnf_batch['img_R'], tnf_batch['img_R_orig'])
+        elif loss_fn._get_name() == 'CombinedLoss':
+            if 'img_R' in tnf_batch and 'img_R_orig' in tnf_batch:
+                loss, loss_parts = loss_fn(theta, tnf_batch['theta_GT'], tnf_batch['img_R'], tnf_batch['img_R_orig'])
+            else:
+                loss, loss_parts = loss_fn(theta, tnf_batch['theta_GT'])
+            if tb_writer and batch_idx % log_interval == 0:
+                tb_writer.add_scalars('combined train loss',
+                                      loss_parts,
+                                      (epoch - 1) * len(dataloader) + batch_idx)
         else:
             loss = loss_fn(theta, tnf_batch['theta_GT'])
 
@@ -81,6 +90,11 @@ def validate_model(model, loss_fn,
             loss = loss_fn(theta, tnf_batch['theta_GT'].view(batch_size,-1))
         elif loss_fn._get_name() == 'ReconstructionLoss':
             loss = loss_fn(theta, tnf_batch['img_R'], tnf_batch['img_R_orig'])
+        elif loss_fn._get_name() == 'CombinedLoss':
+            if 'img_R' in tnf_batch and 'img_R_orig' in tnf_batch:
+                loss, _ = loss_fn(theta, tnf_batch['theta_GT'], tnf_batch['img_R'], tnf_batch['img_R_orig'])
+            else:
+                loss, _ = loss_fn(theta, tnf_batch['theta_GT'])
         else:
             loss = loss_fn(theta, tnf_batch['theta_GT'])
 
