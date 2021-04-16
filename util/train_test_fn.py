@@ -43,9 +43,8 @@ def train(epoch, model, loss_fn, optimizer,
             else:
                 loss, loss_parts = loss_fn(theta, tnf_batch['theta_GT'])
             if tb_writer and batch_idx % log_interval == 0:
-                tb_writer.add_scalars('combined train loss',
-                                      loss_parts,
-                                      (epoch - 1) * len(dataloader) + batch_idx)
+                for key, value in loss_parts.items():
+                    tb_writer.add_scalar(key, value, (epoch - 1) * len(dataloader) + batch_idx)
         else:
             loss = loss_fn(theta, tnf_batch['theta_GT'])
 
