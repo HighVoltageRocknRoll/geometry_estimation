@@ -30,7 +30,7 @@ class ArgumentParser():
         
         # ME model parameters
         model_params.add_argument('--use-me', type=str_to_bool, nargs='?', const=True, default=False, help='use ME based model')   
-        model_params.add_argument('--use-siamese', type=str_to_bool, nargs='?', const=True, default=False, help='use siamese part for backward disparity')   
+        model_params.add_argument('--use-siamese', type=str_to_bool, nargs='?', const=True, default=False, help='use siamese part for backward disparity')
         model_params.add_argument('--extended-prep-layer', type=str_to_bool, nargs='?', const=True, default=True, help='add relu and maxpool to prep_layer')   
         model_params.add_argument('--me-main-input', type=str, default='disparity', help='main inputs to model: {disparity, grid, both}') 
         model_params.add_argument('--use-backward-input', type=str_to_bool, nargs='?', const=True, default=False, help='add backward (right-to-left) main inputs')  
@@ -98,7 +98,7 @@ class ArgumentParser():
         train_params.add_argument('--batch-size', type=int, default=16, help='training batch size')
         train_params.add_argument('--seed', type=int, default=1, help='Pseudo-RNG seed')
         train_params.add_argument('--loss', type=str, nargs='?', default='split',
-                                  help='Train loss {mse, weighted_mse, grid, combined, split}')
+                                  help='Train loss {mse, weighted_mse, grid, combined}')
         train_params.add_argument('--use-weighted-mse-loss', type=str_to_bool, nargs='?', const=True, default=True,
                                   help='whether to use weighted mse loss in combined loss')
         train_params.add_argument('--use-grid-loss', type=str_to_bool, nargs='?', const=True, default=True,

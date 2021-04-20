@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from model.cnn_geometric_model import CNNGeometric
-from model.loss import WeightedMSELoss, SequentialGridLoss, ReconstructionLoss, SplitLoss, CombinedLoss
+from model.loss import WeightedMSELoss, SequentialGridLoss, ReconstructionLoss, CombinedLoss
 
 from data.synth_dataset import SynthDataset
 from data.me_dataset import MEDataset
@@ -91,11 +91,7 @@ def main():
         model.FeatureRegression.resnet.fc.bias.data += init_theta
 
     args.load_images = False
-    if args.loss == 'split':
-        print('Using Split loss')
-        loss = SplitLoss(use_cuda=use_cuda,
-                         grid_size=20)
-    elif args.loss == 'mse':
+    if args.loss == 'mse':
         print('Using MSE loss...')
         loss = nn.MSELoss()
     elif args.loss == 'weighted_mse':

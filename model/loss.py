@@ -144,47 +144,31 @@ class CombinedLoss(nn.Module):
                                                      use_cuda=use_cuda)
         else:
             self.reconstruction = None
+            
+        if args.use_siamese:
+            self.siamese = WeightedMSELoss(use_cuda=use_cuda)
+        else:
+            self.siamese = None
 
     def forward(self, theta, theta_GT, img_R=None, img_R_orig=None):
         loss_parts = dict()
         loss = 0.0
         if self.weighted_mse is not None:
-            weighted_mse_loss = self.weighted_mse(theta, theta_GT)
+            weighted_mse_loss = self.weighted_mse(theta[:, :3], theta_GT)
             loss_parts['weighted_mse'] = weighted_mse_loss.clone().detach()
             loss += weighted_mse_loss
         if self.sequential_grid is not None:
-            sequential_grid_loss = self.sequential_grid(theta, theta_GT)
+            sequential_grid_loss = self.sequential_grid(theta[:, :3], theta_GT)
             loss_parts['sequential_grid'] = sequential_grid_loss.clone().detach()
             loss += sequential_grid_loss
         if self.reconstruction is not None:
-            reconstruction_loss = self.reconstruction(theta, img_R, img_R_orig)
+            reconstruction_loss = self.reconstruction(theta[:, :3], img_R, img_R_orig)
             loss_parts['reconstruction'] = reconstruction_loss.clone().detach()
             loss += reconstruction_loss
+        if self.siamese is not None:
+            siamese_loss = self.siamese(theta[:, :3], theta[:, 3:])
+            loss_parts['siamese'] = siamese_loss.clone().detach()
+            loss += siamese_loss
 
         return loss, loss_parts
-
-
-class SplitLoss(nn.Module):
-    def __init__(self, use_cuda=True, grid_size=20):
-        super(SplitLoss, self).__init__()
-
-        self.rotate_mse = nn.MSELoss()
-        self.scale_mse = nn.MSELoss()
-        self.shift_mse = nn.MSELoss()
-
-        self.weighted_mse = WeightedMSELoss(use_cuda=use_cuda)
-        self.sequential_grid = SequentialGridLoss(use_cuda=use_cuda, grid_size=grid_size)
-
-        self.weights = torch.tensor([1.0, 10000.0, 10000.0], requires_grad=False)
-        if use_cuda:
-            self.weights = self.weights.cuda()
-
-    def forward(self, theta, theta_GT):
-        loss = self.weighted_mse(theta, theta_GT) + self.sequential_grid(theta, theta_GT)
-        
-        if theta.size(1) > 4:
-            loss += self.rotate_mse(theta[:, 0], theta[:, 3]) * self.weights[0] + \
-               self.scale_mse(theta[:, 1], theta[:, 4]) * self.weights[1] + \
-               self.shift_mse(theta[:, 2], theta[:, 5]) * self.weights[2]
-                   
-        return loss
+    
